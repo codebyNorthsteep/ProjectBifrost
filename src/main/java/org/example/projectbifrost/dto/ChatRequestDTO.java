@@ -5,7 +5,7 @@ package org.example.projectbifrost.dto;
  * a chat interaction, including the personality of the chatbot, the message
  * sent by the user, and a session identifier for tracking the conversation.
  */
-public record ChatRequestDTO(String personality,
+public record ChatRequestDTO(Personality personality,
                              String message,
                              String sessionId) {
 

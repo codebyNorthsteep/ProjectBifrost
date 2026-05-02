@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
  * the session identifier for tracking the conversation, and the timestamp indicating
  * when the response was created.
  */
-public record ChatResponseDTO(String personality,
+public record ChatResponseDTO(Personality personality,
                               String response,
                               String sessionId,
                               LocalDateTime timestamp) {
