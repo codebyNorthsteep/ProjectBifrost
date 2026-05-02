@@ -18,12 +18,12 @@ import java.time.LocalDateTime;
 @Setter
 public class ChatMessage {
     private String role;
-    private String message;
+    private String content;
     private LocalDateTime timeStamp;
 
      public ChatMessage(String role, String message) {
         this.role = role;
-        this.message = message;
+        this.content = message;
         this.timeStamp = LocalDateTime.now();
     }
 }
