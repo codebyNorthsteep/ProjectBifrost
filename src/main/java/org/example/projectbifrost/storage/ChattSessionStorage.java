@@ -8,11 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Manages storage and retrieval of chat sessions.
- *
- * This class provides mechanisms to persist and manage `ChatSession` instances
- * associated with unique session IDs. It uses an internal thread-safe map to store
- * sessions, allowing for concurrent access in multi-threaded environments.
- *
+ * In-memory database for all sessions.
  * Each chat session contains a unique session identifier and a history of chat messages.
  * The class ensures that a session is either retrieved if it exists, or created if it's not
  * yet present in the storage, enabling seamless session management for chat applications.
