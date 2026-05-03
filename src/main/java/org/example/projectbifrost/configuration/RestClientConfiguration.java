@@ -3,19 +3,22 @@ package org.example.projectbifrost.configuration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.client.RestClient;
+
+import java.net.URI;
 
 @Configuration
-public class WebClientConfiguration {
+public class RestClientConfiguration {
     @Value("${openrouter.api.key}")
     private String apiKey;
 
     @Bean
-    public WebClient openAIWebClient() {
-        return WebClient.builder()
-                .baseUrl("https://openrouter.ai/api/v1") // URL for OpenRouter
-                .defaultHeader("Content-Type", "application/json")
+    public RestClient openAIWebClient() {
+        return RestClient.builder()
+                .baseUrl(URI.create("https://openrouter.ai/api/v1"))
                 .defaultHeader("Authorization", "Bearer " + apiKey)
+                .defaultHeader("Content-Type", "application/json")
                 .build();
+
     }
 }
