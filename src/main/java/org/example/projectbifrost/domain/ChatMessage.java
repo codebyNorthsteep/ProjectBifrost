@@ -24,6 +24,6 @@ public class ChatMessage {
      public ChatMessage(String role, String message) {
         this.role = role;
         this.content = message;
-        this.timeStamp = LocalDateTime.now();
+        this.timeStamp = LocalDateTime.now();//Adds the current time to each message
     }
 }
