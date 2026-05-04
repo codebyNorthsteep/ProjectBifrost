@@ -22,13 +22,12 @@ public class ChatService {
     private final RestClient restClient;
 
     @Value("${openrouter.model}")
-    private final String model;
+    private String model;
 
-    public ChatService(ChatSessionStorage chatSessionStorage, PersonalityPromptProvider personalityPromptProvider, RestClient restClient, String model) {
+    public ChatService(ChatSessionStorage chatSessionStorage, PersonalityPromptProvider personalityPromptProvider, RestClient restClient) {
         this.chatSessionStorage = chatSessionStorage;
         this.personalityPromptProvider = personalityPromptProvider;
         this.restClient = restClient;
-        this.model = model;
     }
 
     /**
