@@ -1,21 +1,15 @@
 package org.example.projectbifrost.service;
 
-import org.example.projectbifrost.configuration.RestClientConfiguration;
 import org.example.projectbifrost.domain.ChatMessage;
 import org.example.projectbifrost.domain.ChatSession;
 import org.example.projectbifrost.domain.PersonalityPromptProvider;
 import org.example.projectbifrost.dto.ChatRequestDTO;
+import org.example.projectbifrost.dto.OpenRouterResponseDTO;
 import org.example.projectbifrost.storage.ChattSessionStorage;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.reactive.function.client.WebClient;
-
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-
-import static java.util.stream.Collectors.toList;
 
 @Service
 public class ChatService {
@@ -54,16 +48,27 @@ public class ChatService {
 
         var openRouterRequest = Map.of(
                 "messages", messages,
-                "model", "openai/gpt-3.5-turbo" //Add which model should be used
+                "model", "poolside/laguna-xs.2:free" //Add which model should be used
         );
 
-        return restClient.post()
+        OpenRouterResponseDTO response = restClient.post()
                 .uri("/chat/completions")//Start of URI configured in RestClientConfiguration.java
                 .body(openRouterRequest) //Send JSON-body of messages and model
                 .retrieve()
-                //.onStatus4xx
-                .body(String.class);
+                .onStatus(status -> !status.is2xxSuccessful(),
+                        (request, apiResponse) -> {
+                            throw new RuntimeException("API error: " + apiResponse.getStatusCode());
+                        })
+                .body(OpenRouterResponseDTO.class);
 
-
+        String content = response.choices().getFirst().message().content();
+        chatSession.addMessage(new ChatMessage("assistant", content));
+        return content;
     }
+
+
+        public ChatSession getSessionHistory(String sessionId) {
+            return chattSessionStorage.getOrCreateChatSession(sessionId);
+        }
+
 }

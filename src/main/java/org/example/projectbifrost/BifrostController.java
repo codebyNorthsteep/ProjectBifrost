@@ -1,5 +1,6 @@
 package org.example.projectbifrost;
 
+import org.example.projectbifrost.domain.ChatSession;
 import org.example.projectbifrost.dto.ChatRequestDTO;
 import org.example.projectbifrost.service.ChatService;
 import org.slf4j.Logger;
@@ -21,9 +22,14 @@ public class BifrostController {
     public String bifrost() {
         return "Welcome to Bifrost, the gateway to the realms!"; }
 
-    @PostMapping("/bifrost")
-    public ChatRequestDTO sendChatRequest(@RequestBody ChatRequestDTO dto) {
-        chatService.sendRequestToLLM(dto);
-        return dto;
+    @PostMapping("/v1/chat")
+    public String sendChatRequest(@RequestBody ChatRequestDTO dto) {
+        logger.info("Received chat request: Personality={}, Message={}, SessionId={}", dto.personality(), dto.message(), dto.sessionId());
+       return chatService.sendRequestToLLM(dto);
+    }
+
+    @GetMapping("/v1/chat/{sessionId}")
+    public ChatSession getChatHistory(@PathVariable String sessionId) {
+        return chatService.getSessionHistory(sessionId);
     }
 }
