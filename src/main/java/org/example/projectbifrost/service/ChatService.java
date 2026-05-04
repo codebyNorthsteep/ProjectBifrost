@@ -4,24 +4,31 @@ import org.example.projectbifrost.domain.ChatMessage;
 import org.example.projectbifrost.domain.ChatSession;
 import org.example.projectbifrost.domain.PersonalityPromptProvider;
 import org.example.projectbifrost.dto.ChatRequestDTO;
+import org.example.projectbifrost.dto.OpenRouterRequestDTO;
 import org.example.projectbifrost.dto.OpenRouterResponseDTO;
-import org.example.projectbifrost.storage.ChattSessionStorage;
+import org.example.projectbifrost.storage.ChatSessionStorage;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 @Service
 public class ChatService {
 
-    private final ChattSessionStorage chattSessionStorage;
+    private final ChatSessionStorage chatSessionStorage;
     private final PersonalityPromptProvider personalityPromptProvider;
     private final RestClient restClient;
 
-    public ChatService(ChattSessionStorage chattSessionStorage, PersonalityPromptProvider personalityPromptProvider, RestClient restClient) {
-        this.chattSessionStorage = chattSessionStorage;
+    @Value("${openrouter.model}")
+    private final String model;
+
+    public ChatService(ChatSessionStorage chatSessionStorage, PersonalityPromptProvider personalityPromptProvider, RestClient restClient, String model) {
+        this.chatSessionStorage = chatSessionStorage;
         this.personalityPromptProvider = personalityPromptProvider;
         this.restClient = restClient;
+        this.model = model;
     }
 
     /**
@@ -34,11 +41,11 @@ public class ChatService {
      */
     public String sendRequestToLLM(ChatRequestDTO dto) {
         String systemPrompt = personalityPromptProvider.getSystemPrompt(dto.personality());
-        ChatSession chatSession = chattSessionStorage.getOrCreateChatSession(dto.sessionId());
+        ChatSession chatSession = chatSessionStorage.getOrCreateChatSession(dto.sessionId());
         chatSession.addMessage(new ChatMessage("user", dto.message()));
 
         //Create JSON-structure for OpenRouter
-        var messages = new ArrayList<>();
+        List<Map<String, String>> messages = new ArrayList<>();
         messages.add(Map.of("role", "system",
                 "content", systemPrompt)
         );
@@ -46,10 +53,7 @@ public class ChatService {
                 "content", m.getContent())
         ).toList());
 
-        var openRouterRequest = Map.of(
-                "messages", messages,
-                "model", "poolside/laguna-xs.2:free" //Add which model should be used
-        );
+        var openRouterRequest = new OpenRouterRequestDTO(model, messages);
 
         OpenRouterResponseDTO response = restClient.post()
                 .uri("/chat/completions")//Start of URI configured in RestClientConfiguration.java
@@ -68,7 +72,7 @@ public class ChatService {
 
 
         public ChatSession getSessionHistory(String sessionId) {
-            return chattSessionStorage.getOrCreateChatSession(sessionId);
+            return chatSessionStorage.getOrCreateChatSession(sessionId);
         }
 
 }
