@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bifrost AI | Mythological Gateway</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="rune-border"></div>
+
+<div class="app-container">
+    <header>
+        <div class="header-ornament">
+            <div class="ornament-line"></div>
+            <svg class="valknut" viewBox="0 0 40 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <polygon points="20,2 10,20 30,20" stroke="#c8973a" stroke-width="1.5"/>
+                <polygon points="9,21 2,34 21,34" stroke="#c8973a" stroke-width="1.5"/>
+                <polygon points="31,21 19,34 38,34" stroke="#c8973a" stroke-width="1.5"/>
+            </svg>
+            <div class="ornament-line"></div>
+        </div>
+        <h1>Asgard AI</h1>
+        <p>SPEAK TO THE GODS</p>
+    </header>
+
+    <select id="personality-select" class="hidden-select">
+        <option value="ODIN">Odin</option>
+        <option value="LOKI">Loki</option>
+        <option value="THOR">Thor</option>
+        <option value="FREYJA">Freyja</option>
+        <option value="HEIMDALL">Heimdall</option>
+    </select>
+
+    <main>
+        <nav class="god-selector">
+            <div class="god-chip" data-god="THOR">⚡ Thor</div>
+            <div class="god-chip" data-god="FREYJA">🌿 Freyja</div>
+            <div class="god-chip" data-god="ODIN">👁 Odin</div>
+            <div class="god-chip" data-god="LOKI">🔥 Loki</div>
+            <div class="god-chip" data-god="HEIMDALL" class="active">⚓ Heimdall</div>
+        </nav>
+
+        <section id="chat-container">
+            <div id="chat-window">
+                <div class="message assistant">
+                    <div class="god-label">Heimdall</div>
+                    I see all who approach the bridge. Who do you wish to speak with, mortal?
+                </div>
+            </div>
+            <div id="typing-indicator" class="hidden">The Gods are contemplating...</div>
+        </section>
+
+        <section class="input-area">
+            <textarea id="user-input" placeholder="Type your message to the Gods..." rows="1"></textarea>
+            <button id="send-button">Send ᚱ</button>
+        </section>
+    </main>
+
+    <div class="rune-footer">ᚠ ᚢ ᚦ ᚨ ᚱ ᚲ ᚷ ᚹ ᚺ ᚾ ᛁ ᛃ ᛇ ᛈ ᛉ ᛊ ᛏ ᛒ ᛖ ᛗ ᛚ ᛜ ᛞ ᛟ</div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
