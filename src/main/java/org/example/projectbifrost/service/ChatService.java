@@ -5,8 +5,10 @@ import org.example.projectbifrost.domain.ChatSession;
 import org.example.projectbifrost.dto.ChatRequestDTO;
 import org.example.projectbifrost.dto.OpenRouterRequestDTO;
 import org.example.projectbifrost.dto.OpenRouterResponseDTO;
+import org.example.projectbifrost.exception.LLMException;
 import org.example.projectbifrost.storage.ChatSessionStorage;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -51,12 +53,15 @@ public class ChatService {
 
         OpenRouterResponseDTO result = restClient.post()
                 .uri("/chat/completions")//Start of URI configured in RestClientConfiguration.java
-                .body(openRouterRequest) //Send JSON-body of messages and model
+                .body(openRouterRequest) //Send JSON body of messages and model
                 .retrieve()
+                .onStatus(HttpStatusCode::isError, (request, response) -> {
+                    throw new LLMException("The Gods are silent", model);
+                })
                 .body(OpenRouterResponseDTO.class);
 
         if (result == null || result.choices() == null || result.choices().isEmpty()) {
-            throw new RuntimeException("Received empty or invalid response from LLM");
+            throw new LLMException("Received empty or invalid response", model);
         }
         String content = result.choices().getFirst().message().content();
 
