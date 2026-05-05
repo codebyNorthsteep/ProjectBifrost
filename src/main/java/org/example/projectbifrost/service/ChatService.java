@@ -37,14 +37,15 @@ public class ChatService {
      */
     public String sendRequestToLLM(ChatRequestDTO dto) {
         ChatSession chatSession = chatSessionStorage.getOrCreateChatSession(dto.sessionId());
-        chatSession.addMessage(new ChatMessage("user", dto.message()));
 
-List<OpenRouterRequestDTO.Message> apiMessages = new ArrayList<>();
+        List<OpenRouterRequestDTO.Message> apiMessages = new ArrayList<>();
         apiMessages.add(new OpenRouterRequestDTO.Message("system", dto.personality().getSystemPrompt()));
 
         chatSession.getChatHistory().forEach(m ->
                 apiMessages.add(new OpenRouterRequestDTO.Message(m.getRole(), m.getContent()))
         );
+
+        apiMessages.add(new OpenRouterRequestDTO.Message("user", dto.message()));
 
         var openRouterRequest = new OpenRouterRequestDTO(model, apiMessages);
 
@@ -52,23 +53,21 @@ List<OpenRouterRequestDTO.Message> apiMessages = new ArrayList<>();
                 .uri("/chat/completions")//Start of URI configured in RestClientConfiguration.java
                 .body(openRouterRequest) //Send JSON-body of messages and model
                 .retrieve()
-                .onStatus(status -> !status.is2xxSuccessful(),
-                        (request, response) -> {
-                            throw new RuntimeException("API error: " + response.getStatusCode());
-                        })
                 .body(OpenRouterResponseDTO.class);
 
-                String content = result.choices().getFirst().message().content();
-                if (result == null || result.choices() == null || result.choices().isEmpty()) {
-                        throw new RuntimeException("Received empty or invalid response from LLM");
-                    }
+        if (result == null || result.choices() == null || result.choices().isEmpty()) {
+            throw new RuntimeException("Received empty or invalid response from LLM");
+        }
+        String content = result.choices().getFirst().message().content();
+
+        chatSession.addMessage(new ChatMessage("user", dto.message()));
         chatSession.addMessage(new ChatMessage("assistant", content));
         return content;
     }
 
 
-        public ChatSession getSessionHistory(String sessionId) {
-            return chatSessionStorage.getOrCreateChatSession(sessionId);
-        }
+    public ChatSession getSessionHistory(String sessionId) {
+        return chatSessionStorage.getOrCreateChatSession(sessionId);
+    }
 
 }
