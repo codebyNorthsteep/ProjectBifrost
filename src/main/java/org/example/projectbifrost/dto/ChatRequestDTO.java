@@ -1,5 +1,6 @@
 package org.example.projectbifrost.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 /**
@@ -8,7 +9,7 @@ import jakarta.validation.constraints.NotNull;
  * sent by the user, and a session identifier for tracking the conversation.
  */
 public record ChatRequestDTO(@NotNull Personality personality,
-                             String message,
-                             @NotNull String sessionId) {
+                             @NotBlank String message,
+                             @NotBlank String sessionId) {
 
 }
