@@ -41,15 +41,24 @@ async function sendMessage() {
     setLoading(true);
 
     try {
-        const response = await fetch('/api/v1/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                personality: selectedPersonality,
-                message: message,
-                sessionId: chatState.sessionId
-            })
-        });
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        let response;
+
+        try {
+            response = await fetch('/api/v1/chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    personality: selectedPersonality,
+                    message: message,
+                    sessionId: chatState.sessionId
+                }),
+                signal: controller.signal
+            });
+        } finally {
+            clearTimeout(timeoutId);
+        }
 
         if (!response.ok) throw new Error("Divine connection lost.");
 
@@ -67,7 +76,11 @@ function appendMessage(role, name, text) {
     msgDiv.className = `message ${role}`;
 
     if (role === 'assistant') {
-        msgDiv.innerHTML = `<div class="god-label">${name}</div>${text}`;
+        const label = document.createElement('div');
+        label.className = 'god-label';
+        label.textContent = name;
+        msgDiv.appendChild(label);
+        msgDiv.appendChild(document.createTextNode(text));
     } else {
         msgDiv.textContent = text;
     }
@@ -99,6 +112,7 @@ dom.button.addEventListener('click', sendMessage);
 dom.input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        sendMessage().then(r => {}).catch(err => console.error(err));
+        sendMessage().then(r => {
+        }).catch(err => console.error(err));
     }
 });

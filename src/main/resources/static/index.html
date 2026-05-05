@@ -35,21 +35,22 @@
 
     <main>
         <nav class="god-selector">
-            <div class="god-chip" data-god="THOR">⚡ Thor</div>
-            <div class="god-chip" data-god="FREYJA">🌿 Freyja</div>
-            <div class="god-chip" data-god="ODIN">👁 Odin</div>
-            <div class="god-chip" data-god="LOKI">🔥 Loki</div>
-            <div class="god-chip" data-god="HEIMDALL" class="active">⚓ Heimdall</div>
+            <button type="button" class="god-chip" data-god="THOR" aria-pressed="false">⚡ Thor</button>
+            <button type="button" class="god-chip" data-god="FREYJA" aria-pressed="false">🌿 Freyja</button>
+            <button type="button" class="god-chip" data-god="ODIN" aria-pressed="false">👁 Odin</button>
+            <button type="button" class="god-chip" data-god="LOKI" aria-pressed="false">🔥 Loki</button>
+            <button type="button" class="god-chip active" data-god="HEIMDALL" aria-pressed="true">⚓ Heimdall</button>
         </nav>
 
         <section id="chat-container">
-            <div id="chat-window">
+            <div id="chat-window" aria-live="polite" aria-relevant="additions">
                 <div class="message assistant">
                     <div class="god-label">Heimdall</div>
                     I see all who approach the bridge. Who do you wish to speak with, mortal?
                 </div>
             </div>
-            <div id="typing-indicator" class="hidden">The Gods are contemplating...</div>
+            <div id="typing-indicator" class="hidden" role="status" aria-live="polite">The Gods are contemplating...
+            </div>
         </section>
 
         <section class="input-area">
