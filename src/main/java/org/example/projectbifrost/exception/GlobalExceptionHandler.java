@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 
 @ControllerAdvice
 @Slf4j //Structured logging
-public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+public class GlobalExceptionHandler {
 
     @ExceptionHandler(LLMException.class)
     public ResponseEntity<ApiErrorResponse> handleLLMException(LLMException ex) {
@@ -61,17 +61,10 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         );
     }
 
-    /**
-     * Fallback handler for all unexpected internal exceptions.
-     *
-     * This method first checks if the exception implements the ErrorResponse interface (introduced in Spring 6).
-     * This prevents the handler from masking standard Spring framework errors—such as 404 (Not Found),
-     * 405 (Method Not Allowed), or 415 (Unsupported Media Type)—with a generic 500 status code.
-     * If the exception is a genuine, unhandled internal error, it is logged with a full stack trace
-     * and returns a 500 Internal Server Error.
-     */
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleGeneralException(Exception ex) {
+        //If Spring has something to say about an error(e.g 404), use it!
         if (ex instanceof ErrorResponse er) {
             HttpStatus status = HttpStatus.valueOf(er.getStatusCode().value());
             return new ResponseEntity<>(

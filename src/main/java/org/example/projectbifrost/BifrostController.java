@@ -1,5 +1,6 @@
 package org.example.projectbifrost;
 
+import jakarta.validation.Valid;
 import org.example.projectbifrost.domain.ChatSession;
 import org.example.projectbifrost.dto.ChatRequestDTO;
 import org.example.projectbifrost.service.ChatService;
@@ -23,7 +24,7 @@ public class BifrostController {
         return "Welcome to Bifrost, the gateway to the realms!"; }
 
     @PostMapping("/v1/chat")
-    public String sendChatRequest(@RequestBody ChatRequestDTO dto) {
+    public String sendChatRequest(@Valid @RequestBody ChatRequestDTO dto) {
         logger.info("Received chat request: Personality={}, Message={}, SessionId={}", dto.personality(), dto.message(), dto.sessionId());
        return chatService.sendRequestToLLM(dto);
     }
