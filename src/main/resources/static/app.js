@@ -1,8 +1,9 @@
 const chatState = {
     sessionId: crypto.randomUUID(),
-    isWaiting: false
+    isWaiting: false //Flag for waiting for response, to prevent multiple sends
 };
 
+//Save all HTML-elements to reduce boilerplate
 const dom = {
     personality: document.getElementById('personality-select'),
     input: document.getElementById('user-input'),
@@ -16,9 +17,11 @@ const dom = {
 
 dom.chips.forEach(chip => {
     chip.addEventListener('click', () => {
+        //Remove "active" from all chips
         dom.chips.forEach(c => c.classList.remove('active'));
+        //Add "active" to the chip klicked on
         chip.classList.add('active');
-        dom.personality.value = chip.dataset.god;
+        dom.personality.value = chip.dataset.god; //
     });
 });
 
@@ -38,9 +41,10 @@ async function sendMessage() {
 
     appendMessage('user', null, message);
     dom.input.value = '';
-    setLoading(true);
+    setLoading(true); //Show text from HTML in waiting for response
 
     try {
+        //AbortController, set a timer for 15 sek while waiting for response
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000);
         let response;
@@ -52,27 +56,43 @@ async function sendMessage() {
                 body: JSON.stringify({
                     personality: selectedPersonality,
                     message: message,
-                    sessionId: chatState.sessionId
+                    sessionId: chatState.sessionId //Randomized id
                 }),
                 signal: controller.signal
             });
         } finally {
-            clearTimeout(timeoutId);
+            clearTimeout(timeoutId); //If a response was given, turn of timer
         }
 
-        if (!response.ok) throw new Error("Divine connection lost.");
+        if (!response.ok) {
+            let errorMessage = 'The Gods are Silent';
+            try {
+                const errorData = await response.json(); //Read JSON-error from @ControllerAdvice
+                errorMessage = errorData.message || errorMessage;
+            } catch {
+                errorMessage = 'Divine connection lost';
+            }
+            throw new Error(errorMessage);
+        }
 
-        const aiText = await response.text();
+        const aiText = await response.text(); //If ok, read response as text from ai
         appendMessage('assistant', godName, aiText);
     } catch (error) {
-        appendMessage('assistant', 'System', "Error: " + error.message);
+        //Themed timeout message
+        const errorMsg = error.name === 'AbortError'
+            ? 'The Gods took too long to respond...'
+            : error.message;
+        appendMessage('assistant', 'System', errorMsg);
     } finally {
-        setLoading(false);
+        setLoading(false); //Hide loading indicator weather success or not
     }
 }
 
+// ── UI helpers ────────────────────────────────────────────────────────
+
+//Display and format messages in chat window, with different styling for user and assistant. Also scrolls to bottom when new message is added
 function appendMessage(role, name, text) {
-    const msgDiv = document.createElement('div');
+    const msgDiv = document.createElement('div');//Create a new HTML element in memory
     msgDiv.className = `message ${role}`;
 
     if (role === 'assistant') {
