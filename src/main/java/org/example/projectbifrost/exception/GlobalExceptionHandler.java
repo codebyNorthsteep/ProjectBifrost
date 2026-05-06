@@ -66,10 +66,10 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleGeneralException(Exception ex) {
         //If Spring has something to say about an error(e.g 404), use it!
         if (ex instanceof ErrorResponse er) {
-            HttpStatus status = HttpStatus.valueOf(er.getStatusCode().value());
-            return new ResponseEntity<>(
-                    new ApiErrorResponse(LocalDateTime.now(), status.value(), ex.getMessage()),
-                    status
+            var status = er.getStatusCode();
+            String message = ex.getMessage() != null ? ex.getMessage() : "Request failed";
+            return ResponseEntity.status(status).body(
+                    new ApiErrorResponse(LocalDateTime.now(), status.value(), message)
             );
         }
         log.error("Unexpected error: ", ex);
