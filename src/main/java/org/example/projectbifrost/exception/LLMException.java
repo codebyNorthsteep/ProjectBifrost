@@ -4,9 +4,12 @@ import lombok.Getter;
 
 @Getter
 public class LLMException extends RuntimeException {
-    private final String provider;
-    public LLMException(String message, String provider) {
+    private final int statusCode;
+    private final String model;
+
+    public LLMException(String message, String model, int statusCode) {
         super(message);
-        this.provider = provider;
+        this.statusCode = statusCode;
+        this.model = model;
     }
 }

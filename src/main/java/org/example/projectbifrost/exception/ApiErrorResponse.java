@@ -2,7 +2,9 @@ package org.example.projectbifrost.exception;
 
 import java.time.LocalDateTime;
 
-public record ApiErrorResponse(String message,
+public record ApiErrorResponse(LocalDateTime timestamp,
                                int status,
-                               LocalDateTime timestamp) {
+                               String message)            // ← Detailed message for error
+
+{
 }

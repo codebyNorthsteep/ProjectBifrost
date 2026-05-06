@@ -65,13 +65,14 @@ async function sendMessage() {
         }
 
         if (!response.ok) {
+            let errorMessage = 'The Gods are Silent';
             try {
                 const errorData = await response.json(); //Read JSON-error from @ControllerAdvice
-                throw new Error(errorData.message || 'The Gods are Silent');
-            } catch (jsonError) {
-                //Fallback if not json
-                throw new Error("Divine connection lost", { cause: jsonError });
+                errorMessage = errorData.message || errorMessage;
+            } catch {
+                errorMessage = 'Divine connection lost';
             }
+            throw new Error(errorMessage);
         }
 
         const aiText = await response.text(); //If ok, read response as text from ai
