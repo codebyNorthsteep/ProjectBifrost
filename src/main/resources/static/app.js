@@ -78,7 +78,11 @@ async function sendMessage() {
         const aiText = await response.text(); //If ok, read response as text from ai
         appendMessage('assistant', godName, aiText);
     } catch (error) {
-        appendMessage('assistant', 'System', error.message);
+        //Themed timeout message
+        const errorMsg = error.name === 'AbortError'
+            ? 'The Gods took too long to respond...'
+            : error.message;
+        appendMessage('assistant', 'System', errorMsg);
     } finally {
         setLoading(false); //Hide loading indicator weather success or not
     }

@@ -50,6 +50,15 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiErrorResponse> handleUnreadableMessage(org.springframework.http.converter.HttpMessageNotReadableException ex) {
+        log.warn("Malformed request body: {}", ex.getMostSpecificCause().getMessage());
+        return new ResponseEntity<>(
+                new ApiErrorResponse(LocalDateTime.now(), HttpStatus.BAD_REQUEST.value(), "Malformed request body"),
+                HttpStatus.BAD_REQUEST
+        );
+    }
+
     //Handle other internal exceptions
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleGeneralException(Exception ex) {
