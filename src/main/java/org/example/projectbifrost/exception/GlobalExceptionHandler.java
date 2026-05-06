@@ -3,16 +3,18 @@ package org.example.projectbifrost.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.time.LocalDateTime;
 
 @ControllerAdvice
 @Slf4j //Structured logging
-public class GlobalExceptionHandler {
+public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(LLMException.class)
     public ResponseEntity<ApiErrorResponse> handleLLMException(LLMException ex) {
@@ -59,9 +61,24 @@ public class GlobalExceptionHandler {
         );
     }
 
-    //Handle other internal exceptions
+    /**
+     * Fallback handler for all unexpected internal exceptions.
+     *
+     * This method first checks if the exception implements the ErrorResponse interface (introduced in Spring 6).
+     * This prevents the handler from masking standard Spring framework errors—such as 404 (Not Found),
+     * 405 (Method Not Allowed), or 415 (Unsupported Media Type)—with a generic 500 status code.
+     * If the exception is a genuine, unhandled internal error, it is logged with a full stack trace
+     * and returns a 500 Internal Server Error.
+     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleGeneralException(Exception ex) {
+        if (ex instanceof ErrorResponse er) {
+            HttpStatus status = HttpStatus.valueOf(er.getStatusCode().value());
+            return new ResponseEntity<>(
+                    new ApiErrorResponse(LocalDateTime.now(), status.value(), ex.getMessage()),
+                    status
+            );
+        }
         log.error("Unexpected error: ", ex);
         return new ResponseEntity<>(
                 new ApiErrorResponse(LocalDateTime.now(), 500, "An unexpected error occurred"),
