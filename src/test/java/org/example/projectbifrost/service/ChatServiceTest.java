@@ -62,4 +62,33 @@ class ChatServiceTest {
                 .as("Should call the endpoint exactly 3 times due to retry")
                 .hasSize(3);
     }
+
+    @Test
+    @DisplayName("Test Circuit Breaker opens after consecutive failures and calls fallback")
+    void testCircuitBreakerLogic() throws InterruptedException {
+        stubFor(post("/chat/completions")
+                .willReturn(aResponse().withStatus(500)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("Fail!")));
+
+        for (int i = 0; i < 10; i++) {
+            try {
+                chatService.fetchResponseFromLLM(List.of(new OpenRouterRequestDTO.Message("user", "Hello")));
+            } catch (Exception e) {
+                //Ignore exceptions in loop, just let CircuitBreaker register them
+            }
+        }
+
+        //RESET and just return "Fallback!"
+        resetAllRequests();
+        String result = chatService.fetchResponseFromLLM(List.of(new OpenRouterRequestDTO.Message("user", "Hello")));
+
+        assertThat(result).isEqualTo("Fallback!");
+
+        // Verifiera att WireMock inte fick fler anrop (eftersom CB är öppen)
+        verify(0, postRequestedFor(urlEqualTo("/chat/completions")));
+
+        Thread.sleep(6000);  //Timeout open state so we are in half-open
+        chatService.fetchResponseFromLLM(List.of(new OpenRouterRequestDTO.Message("user", "Hello"))); // Now it should work again
+    }
 }
