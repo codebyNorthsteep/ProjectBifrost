@@ -7,12 +7,11 @@ import org.example.projectbifrost.domain.ChatSession;
 import org.example.projectbifrost.dto.ChatRequestDTO;
 import org.example.projectbifrost.dto.OpenRouterRequestDTO;
 import org.example.projectbifrost.dto.OpenRouterResponseDTO;
-import org.example.projectbifrost.exception.LLMException;
+import org.example.projectbifrost.exception.InvalidLLMResponseException;
+import org.example.projectbifrost.exception.RetryableHttpException;
 import org.example.projectbifrost.storage.ChatSessionStorage;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.resilience.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -41,7 +40,7 @@ public class ChatService {
      *
      * @param dto the {@link ChatRequestDTO} containing the user message, chat session ID, and personality configuration.
      * @return the response from the LLM as a string.
-     * @throws LLMException if an error occurs during communication with the LLM,
+     * @throws InvalidLLMResponseException if an error occurs during communication with the LLM,
      *                      or if the LLM response is empty or malformed.
      */
     public String chatWithLLM(ChatRequestDTO dto) {
@@ -73,13 +72,14 @@ public class ChatService {
                 .uri("/chat/completions")//Start of URI configured in RestClientConfiguration.java
                 .body(openRouterRequest) //Send JSON body of messages and model
                 .retrieve()
-                .onStatus(HttpStatusCode::isError, (request, response) -> {
-                    throw new LLMException("The Gods are silent", model, response.getStatusCode().value());
-                })
+                .onStatus(s -> s.value() == 429 || s.value() == 500,
+                        (_, resp) -> {
+                            throw new RetryableHttpException("The Gods are silent");
+                        })
                 .body(OpenRouterResponseDTO.class);
 
         if (result == null || result.choices() == null || result.choices().isEmpty()) {
-            throw new LLMException(
+            throw new InvalidLLMResponseException(
                     "The Gods sent an empty omen (Invalid response from LLM)",
                     model,
                     HttpStatus.BAD_GATEWAY.value()

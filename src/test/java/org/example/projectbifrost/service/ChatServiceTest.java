@@ -15,7 +15,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(properties = {
         "openrouter.api.key=test-key",
-        "openrouter.model=test-model"
+        "openrouter.model=test-model",
+        "openrouter.base-url=${wiremock.server.baseUrl}"
 })
 @EnableWireMock
 class ChatServiceTest {
@@ -29,19 +30,25 @@ class ChatServiceTest {
         stubFor(post(urlEqualTo("/chat/completions"))//OpenRouters url
                 .inScenario("Retry Scenario")
                 .whenScenarioStateIs(Scenario.STARTED)
-                .willReturn(aResponse().withStatus(500).withBody("Failure!"))
+                .willReturn(aResponse().withStatus(500)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("Failure!"))
                 .willSetStateTo("Failure number 1"));
 
         stubFor(post(urlEqualTo("/chat/completions"))
                 .inScenario("Retry Scenario")
                 .whenScenarioStateIs("Failure number 1")
-                .willReturn(aResponse().withStatus(500).withBody("Failure again!"))
+                .willReturn(aResponse().withStatus(500)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("Failure again!"))
                 .willSetStateTo("Failure number 2"));
 
         stubFor(post(urlEqualTo("/chat/completions"))
                 .inScenario("Retry Scenario")
                 .whenScenarioStateIs("Failure number 2")
-                .willReturn(aResponse().withStatus(200).withBody("{\"choices\": [{\"message\": {\"content\": \"Success!\"}}]}"))); //OpenRouters JSON format expected
+                .willReturn(aResponse().withStatus(200)
+                        .withHeader("Content-Type", "application/json") //Have to tell RestClient that this is JSON, otherwise it won't parse the body and the test will fail since the response will be empty
+                        .withBody("{\"choices\": [{\"message\": {\"content\": \"Success!\"}}]}"))); //OpenRouters JSON format expected
 
         String result = chatService.fetchResponseFromLLM(List.of(new OpenRouterRequestDTO.Message("user", "Hello")));
 
@@ -51,7 +58,7 @@ class ChatServiceTest {
 
         verify(3, postRequestedFor(urlEqualTo("/chat/completions"))); //Verify that the endpoint was called 3 times (initial + 2 retries)
 
-        assertThat(findAll(getRequestedFor(urlEqualTo("/chat/completions"))))
+        assertThat(findAll(postRequestedFor(urlEqualTo("/chat/completions"))))
                 .as("Should call the endpoint exactly 3 times due to retry")
                 .hasSize(3);
     }
