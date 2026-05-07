@@ -10,6 +10,7 @@ import org.example.projectbifrost.storage.ChatSessionStorage;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.resilience.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -30,15 +31,18 @@ public class ChatService {
         this.restClient = restClient;
     }
 
+
     /**
-     * Sends a request to the large language model (LLM) with the user's message and personality context
-     * and retrieves the response.
-     * <p>
-     * This method constructs a chat session using the provided session ID or creates a new one if it
-     * does not exist. It adds the user's message to the chat session and builds a context-aware request
-     * to be sent to the LLM. The LLM's response is then returned as a string.
+     * Sends a chat request to a large language model (LLM) using the supplied chat request data.
+     * The method manages the chat session, compiles the request for the LLM, and processes the response.
+     * It also maintains the history of chat messages within the session.
+     *
+     * @param dto the {@link ChatRequestDTO} containing the user message, chat session ID, and personality configuration.
+     * @return the response from the LLM as a string.
+     * @throws LLMException if an error occurs during communication with the LLM,
+     *                      or if the LLM response is empty or malformed.
      */
-    public String sendRequestToLLM(ChatRequestDTO dto) {
+    public String chatWithLLM(ChatRequestDTO dto) {
         ChatSession chatSession = chatSessionStorage.getOrCreateChatSession(dto.sessionId());
 
         List<OpenRouterRequestDTO.Message> apiMessages = new ArrayList<>();
@@ -49,7 +53,16 @@ public class ChatService {
         );
 
         apiMessages.add(new OpenRouterRequestDTO.Message("user", dto.message()));
+        String content = fetchResponseFromLLM(apiMessages);
 
+        chatSession.addMessage(new ChatMessage("user", dto.message()));
+        chatSession.addMessage(new ChatMessage("assistant", content));
+
+        return content;
+
+    }
+
+    public String fetchResponseFromLLM(List<OpenRouterRequestDTO.Message> apiMessages) {
         var openRouterRequest = new OpenRouterRequestDTO(model, apiMessages);
 
         OpenRouterResponseDTO result = restClient.post()
@@ -68,13 +81,13 @@ public class ChatService {
                     HttpStatus.BAD_GATEWAY.value()
             );
         }
-        String content = result.choices().getFirst().message().content();
+        return result.choices().getFirst().message().content();
 
-        chatSession.addMessage(new ChatMessage("user", dto.message()));
-        chatSession.addMessage(new ChatMessage("assistant", content));
-        return content;
     }
 
+    public String fallback(Exception e) {
+        return "Fallback!";
+    }
 
     public ChatSession getSessionHistory(String sessionId) {
         return chatSessionStorage.getOrCreateChatSession(sessionId);

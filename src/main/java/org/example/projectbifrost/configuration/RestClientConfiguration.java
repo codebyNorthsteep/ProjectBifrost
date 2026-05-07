@@ -13,7 +13,7 @@ public class RestClientConfiguration {
     private String apiKey;
 
     @Bean
-    public RestClient openAIWebClient() {
+    public RestClient openRouterRestClient() {
         return RestClient.builder()
                 .baseUrl(URI.create("https://openrouter.ai/api/v1"))
                 .defaultHeader("Authorization", "Bearer " + apiKey)
