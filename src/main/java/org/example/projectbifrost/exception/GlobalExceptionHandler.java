@@ -74,6 +74,7 @@ public class GlobalExceptionHandler {
             String message = ex.getMessage() != null ? ex.getMessage() : "Request failed";
             ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, message);
             problem.setProperty(TIMESTAMP_PROPERTY, Instant.now().toString());
+            problem.setTitle("Request Error");
             return ResponseEntity.status(status).body(problem);
         }
         log.error("Unexpected error: ", ex);
