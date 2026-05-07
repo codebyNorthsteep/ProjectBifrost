@@ -64,8 +64,8 @@ public class ChatService {
 
     }
 
-    @CircuitBreaker(name = "llmCircuitBreaker", fallbackMethod = "fallback") //Break stream of tries if too many failures, and call fallback method
-    @Retry(name = "openrouter") //Try again if fails, up to max-attempts
+    @CircuitBreaker(name = "chatService", fallbackMethod = "fallback") //Break stream of tries if too many failures, and call fallback method
+    @Retry(name = "chatService") //Try again if fails, up to max-attempts
     public String fetchResponseFromLLM(List<OpenRouterRequestDTO.Message> apiMessages) {
         var openRouterRequest = new OpenRouterRequestDTO(model, apiMessages);
 
