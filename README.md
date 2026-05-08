@@ -1,10 +1,10 @@
-# 🌉 ProjectBifrost - Speak to the Gods
+# 🌉 Asgard AI - Speak to the Gods
 Välkommen du modige äventyrare! 
-ProjectBifrost är en modern chatt-applikation där du kan kommunicera med fem olika nordiska gudar, var och en med sin egen unika personlighet. Systemet använder avancerad prompt-engineering och AI via OpenRouter för att ge autentiska svar.
+ProjectBifrost(Asgard AI) är en modern chatt-applikation där du kan kommunicera med fem olika nordiska gudar, var och en med sin egen unika personlighet. Systemet använder avancerad prompt-engineering och AI via OpenRouter för att ge autentiska svar.
 ## 🎯 Features
 
-- 🗣️ **Fem gudomliga personligheter**: Odin, Loki, Thor, Freyja, och Heimdall
-- 💬 **Chathistorik**: Dina samtal sparas lokalt i webbläsaren och hämtas automatiskt vid sidomladdning.
+- 🗣️ **Fem gudomliga personligheter**: Odin, Loki, Thor, Freyja, och Heimdall - var och en med unika svarsstilar och personlighetsdrag (Prompt Engineering)
+- 💬 **Chatthistorik**: Dina samtal sparas server-side och hämtas automatiskt vid sidomladdning via ditt sessions ID. Persistent chat-historik per session.
 - 🛡️ **Resilience**: Circuit Breaker + Retry-logik för robust API-hantering
 - ♿ **Accessible**: Nordisk-inspirerad design med responsiv layout och gud-chips för snabba val.
 - ⚡ **Real-time Feedback**: Visar när gudarna "tänker" (typing indicator) och hanterar timeouts snyggt.
