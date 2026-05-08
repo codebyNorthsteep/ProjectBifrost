@@ -2,6 +2,7 @@ package org.example.projectbifrost.service;
 
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import org.example.projectbifrost.dto.OpenRouterRequestDTO;
+import org.example.projectbifrost.exception.RetryableHttpException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,7 +66,7 @@ class ChatServiceTest {
     }
 
     @Test
-    @DisplayName("Test Circuit Breaker opens after consecutive failures and calls fallback")
+    @DisplayName("Test Circuit Breaker opens after consecutive failures and throws exception")
     void testCircuitBreakerLogic() throws InterruptedException {
         stubFor(post("/chat/completions")
                 .willReturn(aResponse().withStatus(500)
@@ -80,16 +81,29 @@ class ChatServiceTest {
             }
         }
 
-        //RESET and just return "Fallback!"
+        // RESET and verify circuit breaker is open, so fallback throws exception
         resetAllRequests();
-        String result = chatService.fetchResponseFromLLM(List.of(new OpenRouterRequestDTO.Message("user", "Hello")));
 
-        assertThat(result).isEqualTo("Fallback!");
+        assertThatThrownBy(() ->
+            chatService.fetchResponseFromLLM(List.of(new OpenRouterRequestDTO.Message("user", "Hello")))
+        )
+        .isInstanceOf(RetryableHttpException.class)
+        .hasMessageContaining("The Gods are not responding");
 
         // Verify that WireMock didn't receive the call (because CB is open)
         verify(0, postRequestedFor(urlEqualTo("/chat/completions")));
 
         Thread.sleep(6000);  //Timeout open state so we are in half-open
-        chatService.fetchResponseFromLLM(List.of(new OpenRouterRequestDTO.Message("user", "Hello"))); // Now it should work again
+
+        // Now stub WireMock again to return success for the HALF_OPEN test
+        stubFor(post("/chat/completions")
+                .willReturn(aResponse().withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\"choices\": [{\"message\": {\"content\": \"Success after recovery!\"}}]}")));
+
+        String result = chatService.fetchResponseFromLLM(List.of(new OpenRouterRequestDTO.Message("user", "Hello")));
+        assertThat(result)
+                .as("Circuit breaker should have recovered and call should succeed")
+                .isEqualTo("Success after recovery!");
     }
 }
