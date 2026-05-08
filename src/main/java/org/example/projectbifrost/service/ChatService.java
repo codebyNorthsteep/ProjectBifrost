@@ -58,8 +58,11 @@ public class ChatService {
         apiMessages.add(new OpenRouterRequestDTO.Message("user", dto.message()));
         String content = fetchResponseFromLLM(apiMessages);
 
-        chatSession.addMessage(new ChatMessage("user", dto.message()));
-        chatSession.addMessage(new ChatMessage("assistant", content));
+        // Don't pollute chat history with the circuit-breaker sentinel.
+        if (!"Fallback!".equals(content)) {
+            chatSession.addMessage(new ChatMessage("user", dto.message()));
+            chatSession.addMessage(new ChatMessage("assistant", content));
+        }
 
         return content;
 

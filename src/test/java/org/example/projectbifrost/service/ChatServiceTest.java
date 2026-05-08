@@ -12,6 +12,7 @@ import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest(properties = {
         "openrouter.api.key=test-key",
@@ -85,7 +86,7 @@ class ChatServiceTest {
 
         assertThat(result).isEqualTo("Fallback!");
 
-        // Verifiera att WireMock inte fick fler anrop (eftersom CB är öppen)
+        // Verify that WireMock didn't receive the call (because CB is open)
         verify(0, postRequestedFor(urlEqualTo("/chat/completions")));
 
         Thread.sleep(6000);  //Timeout open state so we are in half-open
