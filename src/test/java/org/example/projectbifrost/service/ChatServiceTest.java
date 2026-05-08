@@ -60,16 +60,30 @@ class ChatServiceTest {
     @Test
     @DisplayName("Should throw InvalidLLMResponseException if LLM has empty answer")
     void testEmptyAnswerFromLLM() {
-        // 1. Säg till WireMock att skicka ett svar där "choices" är helt tomt []
+        //Tell WireMock to send an answer where "choices" is empty []
         stubFor(post(urlEqualTo("/chat/completions"))
                 .willReturn(aResponse().withStatus(200)
                         .withHeader("Content-Type", "application/json")
                         .withBody("{\"choices\": []}")));
 
-        // 2. Kontrollera att din service kastar rätt fel (InvalidLLMResponseException)
+        ChatRequestDTO requestDTO = new ChatRequestDTO(Personality.ODIN, "Hello", "session-123");
+
         assertThatThrownBy(() ->
-                chatService.chatWithLLM(new ChatRequestDTO(Personality.ODIN, "Hello", "session-123"))
+                chatService.chatWithLLM(requestDTO)
         ).isInstanceOf(InvalidLLMResponseException.class);
+    }
+
+    @Test
+    @DisplayName("Should throw RetryableHttpException if server returns status 500")
+    void testServerErrorThrowsException() {
+        stubFor(post(urlEqualTo("/chat/completions"))
+                .willReturn(aResponse().withStatus(500)));
+
+        ChatRequestDTO requestDTO = new ChatRequestDTO(Personality.ODIN, "Hello", "session-123");
+
+        assertThatThrownBy(() ->
+                chatService.chatWithLLM(requestDTO)
+        ).isInstanceOf(RetryableHttpException.class);
     }
 
     @Test
@@ -114,6 +128,9 @@ class ChatServiceTest {
     @Test
     @DisplayName("Test Circuit Breaker opens after consecutive failures and throws exception")
     void testCircuitBreakerLogic() throws InterruptedException {
+
+        var messages = List.of(new OpenRouterRequestDTO.Message("user", "Hello"));
+
         stubFor(post("/chat/completions")
                 .willReturn(aResponse().withStatus(500)
                         .withHeader("Content-Type", "application/json")
@@ -121,7 +138,7 @@ class ChatServiceTest {
 
         for (int i = 0; i < 10; i++) {
             try {
-                chatService.fetchResponseFromLLM(List.of(new OpenRouterRequestDTO.Message("user", "Hello")));
+                chatService.fetchResponseFromLLM(messages);
             } catch (Exception e) {
                 //Ignore exceptions in loop, just let CircuitBreaker register them
             }
@@ -130,8 +147,9 @@ class ChatServiceTest {
         // RESET and verify circuit breaker is open, so fallback throws exception
         resetAllRequests();
 
+
         assertThatThrownBy(() ->
-            chatService.fetchResponseFromLLM(List.of(new OpenRouterRequestDTO.Message("user", "Hello")))
+            chatService.fetchResponseFromLLM(messages)
         )
         .isInstanceOf(RetryableHttpException.class)
         .hasMessageContaining("The Gods are not responding");
