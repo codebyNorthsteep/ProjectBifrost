@@ -10,6 +10,12 @@ ProjectBifrost är en modern chatt-applikation där du kan kommunicera med fem o
 - ⚡ **Real-time Feedback**: Visar när gudarna "tänker" (typing indicator) och hanterar timeouts snyggt.
 - 🎨 **Tema**: Nordisk-inspirerad design med guld och mörkblå nyanser
 
+## 🎬 Live Demo
+
+Se hur smidigt det går att konversera med Asgårds gudar! Notera typing-indicatorn när guden förbereder sitt svar.
+
+<img width="496" height="502" alt="gifDemoAsgard" src="https://github.com/user-attachments/assets/d52b501a-292c-4065-9891-30a26afd3332" />
+
 ---
 
 ## ⚡ Snabbstart
