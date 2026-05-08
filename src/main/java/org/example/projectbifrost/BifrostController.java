@@ -19,10 +19,6 @@ public class BifrostController {
         this.chatService = chatService;
     }
 
-    @GetMapping("/bifrost")
-    public String bifrost() {
-        return "Welcome to Bifrost, the gateway to the realms!";
-    }
 
     @PostMapping("/v1/chat")
     public String sendChatRequest(@Valid @RequestBody ChatRequestDTO dto) {
