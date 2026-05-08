@@ -14,7 +14,7 @@ ProjectBifrost är en modern chatt-applikation där du kan kommunicera med fem o
 
 Se hur smidigt det går att konversera med Asgårds gudar! Notera typing-indicatorn när guden förbereder sitt svar.
 
-<img width="496" height="502" alt="gifDemoAsgard" src="https://github.com/user-attachments/assets/d52b501a-292c-4065-9891-30a26afd3332" />
+<img width="534" height="498" alt="finalGifDemo" src="https://github.com/user-attachments/assets/46a9c2eb-c061-4967-aec6-99e5b6739172" />
 
 ---
 
