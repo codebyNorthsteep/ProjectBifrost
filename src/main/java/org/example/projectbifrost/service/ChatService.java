@@ -60,8 +60,8 @@ public class ChatService {
         try {
             String content = fetchResponseFromLLM(apiMessages);
             // Only store in history if we got a real LLM response (not a circuit breaker fallback)
-            chatSession.addMessage(new ChatMessage("user", dto.message()));
-            chatSession.addMessage(new ChatMessage("assistant", content));
+            chatSession.addMessage(new ChatMessage("user", dto.message(), "You"));
+            chatSession.addMessage(new ChatMessage("assistant", content, dto.personality().toString()));
             return content;
         } catch (RetryableHttpException e) {
             // Circuit breaker is open or service unavailable - don't pollute history

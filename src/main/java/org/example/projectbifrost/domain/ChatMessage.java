@@ -19,11 +19,13 @@ import java.time.LocalDateTime;
 public class ChatMessage {
     private String role;
     private String content;
+    private String senderName; //For chat
     private LocalDateTime timeStamp;
 
-     public ChatMessage(String role, String message) {
+     public ChatMessage(String role, String message, String senderName) {
         this.role = role;
         this.content = message;
+        this.senderName = senderName;
         this.timeStamp = LocalDateTime.now();//Adds the current time to each message
     }
 }
