@@ -28,8 +28,12 @@ public class ChatSessionStorage {
         );
     }
 
+    /**
+     * Deletes a session by its ID.
+     * * Note: For production, an automatic cleanup (like a Cache with
+     * a time limit) would be better to avoid filling up the memory.
+     */
     public void deleteSession(String sessionId) {
         sessionStorage.remove(sessionId);
-    //Copilot påpekar att det kan vara bra med en MAX-size på listan, och sköta delete om den blir för stor
     }
 }
