@@ -1,6 +1,15 @@
+const getSessionId = () => {
+    let id = localStorage.getItem('bifrost_session_id'); //Try to find the old sessionID or create a new one
+    if (!id) {
+        id = crypto.randomUUID();
+        localStorage.setItem('bifrost_session_id', id);
+    }
+    return id;
+};
+
 const chatState = {
-    sessionId: crypto.randomUUID(),
-    isWaiting: false //Flag for waiting for response, to prevent multiple sends
+    sessionId: getSessionId(),
+    isWaiting: false
 };
 
 //Save all HTML-elements to reduce boilerplate
@@ -134,5 +143,30 @@ dom.input.addEventListener('keydown', (e) => {
         e.preventDefault();
         sendMessage().then(r => {
         }).catch(err => console.error(err));
+    }
+});
+
+// Körs automatiskt när sidan laddas om
+window.addEventListener('DOMContentLoaded', async () => {
+    try {
+        // Vi anropar din befintliga GetMapping: /api/v1/chat/{sessionId}
+        const response = await fetch(`/api/v1/chat/${chatState.sessionId}`);
+
+        if (response.ok) {
+            const sessionData = await response.json(); // Detta matchar din ChatSession-klass
+
+            // if there is sessionData.chatHistory saved, we loop through it and display the messages in the chat window
+            if (sessionData && sessionData.chatHistory && sessionData.chatHistory.length > 0) {
+                sessionData.chatHistory.forEach(msg => {
+                    const role = msg.role === 'assistant' ? 'assistant' : 'user';
+                    // Name saved from backend
+                    const name = role === 'assistant' ? getGodName(msg.senderName) : null;
+
+                    appendMessage(role, name, msg.content);
+                });
+            }
+        }
+    } catch (err) {
+        console.error("Could not fetch chat history:", err);
     }
 });
