@@ -12,7 +12,7 @@ ProjectBifrost är en modern chatt-applikation där du kan kommunicera med fem o
 
 ## 🎬 Live Demo
 
-Se hur smidigt det går att konversera med Asgårds gudar! Notera typing-indicatorn när guden förbereder sitt svar.
+Se hur smidigt det går att konversera med Asgårds gudar! Notera typing-indicatorn när guden förbereder sitt svar. **Very demure** 
 
 <img width="534" height="498" alt="finalGifDemo" src="https://github.com/user-attachments/assets/46a9c2eb-c061-4967-aec6-99e5b6739172" />
 
@@ -69,7 +69,7 @@ openrouter.model=gpt-4o-mini
 ```
 Se alla tillgängliga modeller på: https://openrouter.ai/models
 
-⚠️ Vissa modeller kostar pengar - kolla prisen innan du byter!
+⚠️ Vissa modeller kostar pengar, kolla prisen innan du byter!
 
 ### 4️⃣ Starta applikationen
 
@@ -122,10 +122,22 @@ ChatSessionStorage (In-memory cache)
 
 ---
 
-## 🛠️ Tekstack
+## 🧠 Frontend (JavaScript)
+
+- 🪟 **Din väg över Bifrost**: Session ID genereras automatiskt via `crypto.randomUUID()` och sparas i `localStorage.bifrost_session_id`, så länge du inte tömmer webbläsarens cache
+- ⚓ **Heimdall Vaktar**: Default personlighet sätts i HTML och JS (`dom.personality.value = 'HEIMDALL'`)
+- 📜 **Runor från Mnemosyne - Minnets gudinna**:
+  - Alla sessioner med meddelanden sparas **lokalt** i `ChatSessionStorage` (in-memory)
+  - Vid sidladdning hämtar JavaScript automatiskt samtida historik via `GET /api/v1/chat/{sessionId}`
+  - Om du laddar om sidan → samma session ID → all historik visas igen
+  - Sessions försvinner endast när Java-servern omstartas (in-memory)
+
+---
+
+## 🛠️ Techstack
 
 - **Backend**: Spring Boot 4.0.6, Java 25
-- **Frontend**: Vanilla JavaScript
+- **Frontend**: Vanilla JavaScript, HTML, CSS
 - **API**: OpenRouter (LLM)
 - **Resilience**: Resilience4j
 - **Testning**: JUnit 5, AssertJ, Mockito, WireMock
@@ -144,8 +156,8 @@ ChatSessionStorage (In-memory cache)
 ## ⚠️ Viktigt
 
 - Du behöver ett giltigt OpenRouter API-nyckel för att chatten ska fungera
+- Se till att du angett din `OPENROUTER_API_KEY` innan du startar appen
 - Sessions sparas i **minnet** och försvinner vid omstart av applikationen
-- Se till att `OPENROUTER_API_KEY` är ställd innan du startar appen
 
 ---
 
