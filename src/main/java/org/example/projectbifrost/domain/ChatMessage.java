@@ -5,14 +5,17 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+
 /**
- * Represents a chat message in a conversation.
- * This class encapsulates the details of a single message, including its role, content,
- * and the timestamp at which it was created.
+ * Represents a chat message within a chat session.
  *
- * The role typically signifies the sender's identity (e.g., user, system, assistant),
- * while the message contains the text content of the chat.
- * The timestamp indicates when the message was generated.
+ * This class encapsulates the details of a message exchanged
+ * during a chat session, including its role (e.g., "user", "assistant"),
+ * the message content, the sender's name, and the timestamp
+ * of when the message was created. Instances of this class
+ * are typically used and managed in the context of a {@link ChatSession}.
+ *
+ * The timestamp is automatically generated at the time of message creation.
  */
 @Getter
 @Setter

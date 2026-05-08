@@ -3,6 +3,10 @@ package org.example.projectbifrost.dto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+/**
+ * Enum representing various personalities inspired by Norse mythology for use in chat interactions.
+ * Each personality encapsulates a unique prompt that guides the tone and style of responses.
+ */
 @Getter
 @AllArgsConstructor
 public enum Personality {

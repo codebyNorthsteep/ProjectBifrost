@@ -12,6 +12,13 @@ import org.springframework.web.client.ResourceAccessException;
 
 import java.time.Instant;
 
+/**
+ * Global exception handler for managing and translating exceptions into client-friendly responses.
+ *
+ * This class contains multiple exception handler methods that map specific types of exceptions
+ * to appropriate HTTP response statuses and error messages. It provides a centralized approach
+ * to exception handling for the application, ensuring consistent and informative API responses.
+ */
 @ControllerAdvice
 @Slf4j //Structured logging
 public class GlobalExceptionHandler {
