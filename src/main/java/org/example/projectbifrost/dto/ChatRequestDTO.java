@@ -8,8 +8,8 @@ import jakarta.validation.constraints.NotNull;
  * a chat interaction, including the personality of the chatbot, the message
  * sent by the user, and a session identifier for tracking the conversation.
  */
-public record ChatRequestDTO(@NotNull Personality personality,
-                             @NotBlank String message,
-                             @NotBlank String sessionId) {
+public record ChatRequestDTO(@NotNull(message = "Personality can not be null") Personality personality,
+                             @NotBlank(message = "Message can not be blank") String message,
+                             @NotBlank(message = "sessionId can not be blank") String sessionId) {
 
 }

@@ -1,7 +1,11 @@
 package org.example.projectbifrost.service;
 
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
+import org.example.projectbifrost.domain.ChatSession;
+import org.example.projectbifrost.dto.ChatRequestDTO;
 import org.example.projectbifrost.dto.OpenRouterRequestDTO;
+import org.example.projectbifrost.dto.Personality;
+import org.example.projectbifrost.exception.InvalidLLMResponseException;
 import org.example.projectbifrost.exception.RetryableHttpException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,6 +29,62 @@ class ChatServiceTest {
 
     @Autowired
     private ChatService chatService;
+
+    @Test
+    @DisplayName("Test complete successful chat flow with session management and message history")
+    void testSuccessfulChatWithLLM() {
+        String sessionId = "test-sessionId-1";
+        String userMessage = "What is your advice?";
+        String llmResponse = "Heed my wisdom, mortal!";
+
+        stubFor(post(urlEqualTo("/chat/completions"))
+                .willReturn(aResponse().withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\"choices\": [{\"message\": {\"content\": \"" + llmResponse + "\"}}]}")));
+
+        String result = chatService.chatWithLLM(
+                new ChatRequestDTO(Personality.ODIN, userMessage, sessionId)
+        );
+
+        // Verify response and history
+        assertThat(result).isEqualTo(llmResponse);
+
+        ChatSession session = chatService.getSessionHistory(sessionId);
+        assertThat(session.getChatHistory()).hasSize(2);
+        assertThat(session.getChatHistory().get(0).getRole()).isEqualTo("user");
+        assertThat(session.getChatHistory().get(0).getContent()).isEqualTo(userMessage);
+        assertThat(session.getChatHistory().get(1).getRole()).isEqualTo("assistant");
+        assertThat(session.getChatHistory().get(1).getContent()).isEqualTo(llmResponse);
+    }
+
+    @Test
+    @DisplayName("Should throw InvalidLLMResponseException if LLM has empty answer")
+    void testEmptyAnswerFromLLM() {
+        //Tell WireMock to send an answer where "choices" is empty []
+        stubFor(post(urlEqualTo("/chat/completions"))
+                .willReturn(aResponse().withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\"choices\": []}")));
+
+        ChatRequestDTO requestDTO = new ChatRequestDTO(Personality.ODIN, "Hello", "session-empty-llm");
+
+        assertThatThrownBy(() ->
+                chatService.chatWithLLM(requestDTO)
+        ).isInstanceOf(InvalidLLMResponseException.class);
+    }
+
+    @Test
+    @DisplayName("Should throw RetryableHttpException if server returns status 500")
+    void testServerErrorThrowsException() {
+        stubFor(post(urlEqualTo("/chat/completions"))
+                .willReturn(aResponse().withStatus(500)));
+
+        ChatRequestDTO requestDTO = new ChatRequestDTO(Personality.ODIN, "Hello", "session-server-error");
+
+        assertThatThrownBy(() ->
+                chatService.chatWithLLM(requestDTO)
+        ).isInstanceOf(RetryableHttpException.class);
+    }
 
     @Test
     @DisplayName("Test retry mechanism when LLM service is temporarily unavailable")
@@ -68,6 +128,9 @@ class ChatServiceTest {
     @Test
     @DisplayName("Test Circuit Breaker opens after consecutive failures and throws exception")
     void testCircuitBreakerLogic() throws InterruptedException {
+
+        var messages = List.of(new OpenRouterRequestDTO.Message("user", "Hello"));
+
         stubFor(post("/chat/completions")
                 .willReturn(aResponse().withStatus(500)
                         .withHeader("Content-Type", "application/json")
@@ -75,7 +138,7 @@ class ChatServiceTest {
 
         for (int i = 0; i < 10; i++) {
             try {
-                chatService.fetchResponseFromLLM(List.of(new OpenRouterRequestDTO.Message("user", "Hello")));
+                chatService.fetchResponseFromLLM(messages);
             } catch (Exception e) {
                 //Ignore exceptions in loop, just let CircuitBreaker register them
             }
@@ -84,8 +147,9 @@ class ChatServiceTest {
         // RESET and verify circuit breaker is open, so fallback throws exception
         resetAllRequests();
 
+
         assertThatThrownBy(() ->
-            chatService.fetchResponseFromLLM(List.of(new OpenRouterRequestDTO.Message("user", "Hello")))
+            chatService.fetchResponseFromLLM(messages)
         )
         .isInstanceOf(RetryableHttpException.class)
         .hasMessageContaining("The Gods are not responding");
