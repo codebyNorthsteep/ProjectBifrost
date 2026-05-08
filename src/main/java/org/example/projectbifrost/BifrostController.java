@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.projectbifrost.domain.ChatSession;
 import org.example.projectbifrost.dto.ChatRequestDTO;
 import org.example.projectbifrost.service.ChatService;
-import org.slf4j.Logger;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -28,7 +27,7 @@ public class BifrostController {
     @PostMapping("/v1/chat")
     public String sendChatRequest(@Valid @RequestBody ChatRequestDTO dto) {
         log.info("Received chat request: Personality={}, SessionId={}", dto.personality(), maskSessionId(dto.sessionId()));
-        return chatService.sendRequestToLLM(dto);
+        return chatService.chatWithLLM(dto);
     }
 
     @GetMapping("/v1/chat/{sessionId}")

@@ -17,8 +17,9 @@ import java.time.Instant;
 public class GlobalExceptionHandler {
     private static final String TIMESTAMP_PROPERTY = "timestamp";
 
-    @ExceptionHandler(LLMException.class)
-    public ResponseEntity<ProblemDetail> handleLLMException(LLMException ex) {
+    //General LLM errors - captures any error response from the LLM service and translates it to a client-friendly format
+    @ExceptionHandler(InvalidLLMResponseException.class)
+    public ResponseEntity<ProblemDetail> handleInvalidLLMResponseException(InvalidLLMResponseException ex) {
         HttpStatus status;
         try {
             status = HttpStatus.valueOf(ex.getStatusCode()); //Get the error from OpenRouter
@@ -32,6 +33,18 @@ public class GlobalExceptionHandler {
         problem.setProperty(TIMESTAMP_PROPERTY, Instant.now().toString());
         problem.setTitle("LLM Error");
         return ResponseEntity.status(status).body(problem);
+    }
+
+    @ExceptionHandler(RetryableHttpException.class)
+    public ResponseEntity<ProblemDetail> handleRetryableException(RetryableHttpException ex) {
+        log.warn("LLM service unavailable after retries: {}", ex.getMessage());
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "The Gods are silent - service temporarily unavailable"
+        );
+        problem.setProperty(TIMESTAMP_PROPERTY, Instant.now().toString());
+        problem.setTitle("Service Unavailable");
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(problem);
     }
 
     @ExceptionHandler(ResourceAccessException.class)

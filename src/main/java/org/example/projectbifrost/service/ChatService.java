@@ -1,21 +1,25 @@
 package org.example.projectbifrost.service;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
+import lombok.extern.slf4j.Slf4j;
 import org.example.projectbifrost.domain.ChatMessage;
 import org.example.projectbifrost.domain.ChatSession;
 import org.example.projectbifrost.dto.ChatRequestDTO;
 import org.example.projectbifrost.dto.OpenRouterRequestDTO;
 import org.example.projectbifrost.dto.OpenRouterResponseDTO;
-import org.example.projectbifrost.exception.LLMException;
+import org.example.projectbifrost.exception.InvalidLLMResponseException;
+import org.example.projectbifrost.exception.RetryableHttpException;
 import org.example.projectbifrost.storage.ChatSessionStorage;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 public class ChatService {
 
@@ -30,15 +34,18 @@ public class ChatService {
         this.restClient = restClient;
     }
 
+
     /**
-     * Sends a request to the large language model (LLM) with the user's message and personality context
-     * and retrieves the response.
-     * <p>
-     * This method constructs a chat session using the provided session ID or creates a new one if it
-     * does not exist. It adds the user's message to the chat session and builds a context-aware request
-     * to be sent to the LLM. The LLM's response is then returned as a string.
+     * Sends a chat request to a large language model (LLM) using the supplied chat request data.
+     * The method manages the chat session, compiles the request for the LLM, and processes the response.
+     * It also maintains the history of chat messages within the session.
+     *
+     * @param dto the {@link ChatRequestDTO} containing the user message, chat session ID, and personality configuration.
+     * @return the response from the LLM as a string.
+     * @throws InvalidLLMResponseException if an error occurs during communication with the LLM,
+     *                                     or if the LLM response is empty or malformed.
      */
-    public String sendRequestToLLM(ChatRequestDTO dto) {
+    public String chatWithLLM(ChatRequestDTO dto) {
         ChatSession chatSession = chatSessionStorage.getOrCreateChatSession(dto.sessionId());
 
         List<OpenRouterRequestDTO.Message> apiMessages = new ArrayList<>();
@@ -49,32 +56,53 @@ public class ChatService {
         );
 
         apiMessages.add(new OpenRouterRequestDTO.Message("user", dto.message()));
+        String content = fetchResponseFromLLM(apiMessages);
 
+        // Don't pollute chat history with the circuit-breaker sentinel.
+        if (!"Fallback!".equals(content)) {
+            chatSession.addMessage(new ChatMessage("user", dto.message()));
+            chatSession.addMessage(new ChatMessage("assistant", content));
+        }
+
+        return content;
+
+    }
+
+    @CircuitBreaker(name = "chatService", fallbackMethod = "fallback")
+    //Break stream of tries if too many failures, and call fallback method
+    @Retry(name = "chatService") //Try again if fails, up to max-attempts
+    public String fetchResponseFromLLM(List<OpenRouterRequestDTO.Message> apiMessages) {
         var openRouterRequest = new OpenRouterRequestDTO(model, apiMessages);
 
         OpenRouterResponseDTO result = restClient.post()
                 .uri("/chat/completions")//Start of URI configured in RestClientConfiguration.java
                 .body(openRouterRequest) //Send JSON body of messages and model
                 .retrieve()
-                .onStatus(HttpStatusCode::isError, (request, response) -> {
-                    throw new LLMException("The Gods are silent", model, response.getStatusCode().value());
-                })
+                .onStatus(s -> s.value() == 429 || s.value() == 500,
+                        (req, resp) -> {
+                            throw new RetryableHttpException(
+                                    "Upstream LLM returned " + resp.getStatusCode().value()
+                            );
+                        })
                 .body(OpenRouterResponseDTO.class);
 
         if (result == null || result.choices() == null || result.choices().isEmpty()) {
-            throw new LLMException(
+            throw new InvalidLLMResponseException(
                     "The Gods sent an empty omen (Invalid response from LLM)",
                     model,
                     HttpStatus.BAD_GATEWAY.value()
             );
         }
-        String content = result.choices().getFirst().message().content();
+        return result.choices().getFirst().message().content();
 
-        chatSession.addMessage(new ChatMessage("user", dto.message()));
-        chatSession.addMessage(new ChatMessage("assistant", content));
-        return content;
     }
 
+    public String fallback(Exception e) {
+        // Fallback handles all errors from circuit breaker
+        // Log the circuit breaker event and return graceful fallback response
+        log.warn("Circuit breaker fallback triggered for LLM call. Cause: {}", e.getMessage(), e);
+        return "Fallback!";
+    }
 
     public ChatSession getSessionHistory(String sessionId) {
         return chatSessionStorage.getOrCreateChatSession(sessionId);
