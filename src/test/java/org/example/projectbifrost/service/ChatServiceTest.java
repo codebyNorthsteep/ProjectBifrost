@@ -66,7 +66,7 @@ class ChatServiceTest {
                         .withHeader("Content-Type", "application/json")
                         .withBody("{\"choices\": []}")));
 
-        ChatRequestDTO requestDTO = new ChatRequestDTO(Personality.ODIN, "Hello", "session-123");
+        ChatRequestDTO requestDTO = new ChatRequestDTO(Personality.ODIN, "Hello", "session-empty-llm");
 
         assertThatThrownBy(() ->
                 chatService.chatWithLLM(requestDTO)
@@ -79,7 +79,7 @@ class ChatServiceTest {
         stubFor(post(urlEqualTo("/chat/completions"))
                 .willReturn(aResponse().withStatus(500)));
 
-        ChatRequestDTO requestDTO = new ChatRequestDTO(Personality.ODIN, "Hello", "session-123");
+        ChatRequestDTO requestDTO = new ChatRequestDTO(Personality.ODIN, "Hello", "session-server-error");
 
         assertThatThrownBy(() ->
                 chatService.chatWithLLM(requestDTO)
