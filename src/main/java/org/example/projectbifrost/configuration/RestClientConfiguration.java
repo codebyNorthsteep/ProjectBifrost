@@ -10,6 +10,17 @@ import org.springframework.web.client.RestClient;
 
 import java.net.URI;
 
+/**
+ * Configuration class for setting up the RestClient bean used to interact with the OpenRouter service.
+ * Integrates resilient methods to enable fault tolerance when communicating with the API.
+ *
+ * This configuration retrieves API properties such as the base URL and API key from the application's
+ * externalized configuration and injects them as properties. The RestClient is configured with an HTTP client
+ * that disables automatic retries and includes default headers required for authentication and proper content type.
+ *
+ * An instance of the RestClient.Builder is autowired and used to construct the RestClient based on the provided
+ * configuration properties.
+ */
 @Configuration
 @EnableResilientMethods
 public class RestClientConfiguration {
