@@ -2,6 +2,7 @@ package org.example.projectbifrost.service;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
+import lombok.extern.slf4j.Slf4j;
 import org.example.projectbifrost.domain.ChatMessage;
 import org.example.projectbifrost.domain.ChatSession;
 import org.example.projectbifrost.dto.ChatRequestDTO;
@@ -18,6 +19,7 @@ import org.springframework.web.client.RestClient;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 public class ChatService {
 
@@ -41,7 +43,7 @@ public class ChatService {
      * @param dto the {@link ChatRequestDTO} containing the user message, chat session ID, and personality configuration.
      * @return the response from the LLM as a string.
      * @throws InvalidLLMResponseException if an error occurs during communication with the LLM,
-     *                      or if the LLM response is empty or malformed.
+     *                                     or if the LLM response is empty or malformed.
      */
     public String chatWithLLM(ChatRequestDTO dto) {
         ChatSession chatSession = chatSessionStorage.getOrCreateChatSession(dto.sessionId());
@@ -63,7 +65,8 @@ public class ChatService {
 
     }
 
-    @CircuitBreaker(name = "chatService", fallbackMethod = "fallback") //Break stream of tries if too many failures, and call fallback method
+    @CircuitBreaker(name = "chatService", fallbackMethod = "fallback")
+    //Break stream of tries if too many failures, and call fallback method
     @Retry(name = "chatService") //Try again if fails, up to max-attempts
     public String fetchResponseFromLLM(List<OpenRouterRequestDTO.Message> apiMessages) {
         var openRouterRequest = new OpenRouterRequestDTO(model, apiMessages);
@@ -73,8 +76,10 @@ public class ChatService {
                 .body(openRouterRequest) //Send JSON body of messages and model
                 .retrieve()
                 .onStatus(s -> s.value() == 429 || s.value() == 500,
-                        (_, resp) -> {
-                            throw new RetryableHttpException("The Gods are silent");
+                        (req, resp) -> {
+                            throw new RetryableHttpException(
+                                    "Upstream LLM returned " + resp.getStatusCode().value()
+                            );
                         })
                 .body(OpenRouterResponseDTO.class);
 
@@ -89,7 +94,10 @@ public class ChatService {
 
     }
 
-    public String fallback(List<OpenRouterRequestDTO.Message> apiMessages, Exception e) {
+    public String fallback(Exception e) {
+        // Fallback handles all errors from circuit breaker
+        // Log the circuit breaker event and return graceful fallback response
+        log.warn("Circuit breaker fallback triggered for LLM call. Cause: {}", e.getMessage(), e);
         return "Fallback!";
     }
 
