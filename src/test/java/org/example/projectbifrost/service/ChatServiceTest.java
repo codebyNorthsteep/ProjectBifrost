@@ -5,6 +5,7 @@ import org.example.projectbifrost.domain.ChatSession;
 import org.example.projectbifrost.dto.ChatRequestDTO;
 import org.example.projectbifrost.dto.OpenRouterRequestDTO;
 import org.example.projectbifrost.dto.Personality;
+import org.example.projectbifrost.exception.InvalidLLMResponseException;
 import org.example.projectbifrost.exception.RetryableHttpException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -54,6 +55,21 @@ class ChatServiceTest {
         assertThat(session.getChatHistory().get(0).getContent()).isEqualTo(userMessage);
         assertThat(session.getChatHistory().get(1).getRole()).isEqualTo("assistant");
         assertThat(session.getChatHistory().get(1).getContent()).isEqualTo(llmResponse);
+    }
+
+    @Test
+    @DisplayName("Should throw InvalidLLMResponseException if LLM has empty answer")
+    void testEmptyAnswerFromLLM() {
+        // 1. Säg till WireMock att skicka ett svar där "choices" är helt tomt []
+        stubFor(post(urlEqualTo("/chat/completions"))
+                .willReturn(aResponse().withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\"choices\": []}")));
+
+        // 2. Kontrollera att din service kastar rätt fel (InvalidLLMResponseException)
+        assertThatThrownBy(() ->
+                chatService.chatWithLLM(new ChatRequestDTO(Personality.ODIN, "Hello", "session-123"))
+        ).isInstanceOf(InvalidLLMResponseException.class);
     }
 
     @Test
