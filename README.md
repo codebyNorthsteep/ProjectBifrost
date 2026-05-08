@@ -12,7 +12,7 @@ ProjectBifrost(Asgard AI) är en modern chatt-applikation där du kan kommunicer
 
 ## 🎬 Live Demo
 
-Se hur smidigt det går att konversera med Asgårds gudar! Notera typing-indicatorn när guden förbereder sitt svar. **Very demure** 
+Se hur smidigt det går att konversera med Asgårds gudar! Notera typing-indicatorn när guden förbereder sitt svar. **Very demure, very mindful** 
 
 <img width="534" height="498" alt="finalGifDemo" src="https://github.com/user-attachments/assets/46a9c2eb-c061-4967-aec6-99e5b6739172" />
 
