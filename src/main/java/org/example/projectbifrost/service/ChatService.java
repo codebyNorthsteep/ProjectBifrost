@@ -56,15 +56,17 @@ public class ChatService {
         );
 
         apiMessages.add(new OpenRouterRequestDTO.Message("user", dto.message()));
-        String content = fetchResponseFromLLM(apiMessages);
 
-        // Don't pollute chat history with the circuit-breaker sentinel.
-        if (!"Fallback!".equals(content)) {
+        try {
+            String content = fetchResponseFromLLM(apiMessages);
+            // Only store in history if we got a real LLM response (not a circuit breaker fallback)
             chatSession.addMessage(new ChatMessage("user", dto.message()));
             chatSession.addMessage(new ChatMessage("assistant", content));
+            return content;
+        } catch (RetryableHttpException e) {
+            // Circuit breaker is open or service unavailable - don't pollute history
+            throw e;
         }
-
-        return content;
 
     }
 
@@ -98,10 +100,9 @@ public class ChatService {
     }
 
     public String fallback(Exception e) {
-        // Fallback handles all errors from circuit breaker
-        // Log the circuit breaker event and return graceful fallback response
+        // Circuit breaker is open - throw exception so it doesn't pollute chat history
         log.warn("Circuit breaker fallback triggered for LLM call. Cause: {}", e.getMessage(), e);
-        return "Fallback!";
+        throw new RetryableHttpException("The Gods are not responding - service temporarily unavailable"+ e.getMessage());
     }
 
     public ChatSession getSessionHistory(String sessionId) {
