@@ -1,7 +1,10 @@
 package org.example.projectbifrost.service;
 
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
+import org.example.projectbifrost.domain.ChatSession;
+import org.example.projectbifrost.dto.ChatRequestDTO;
 import org.example.projectbifrost.dto.OpenRouterRequestDTO;
+import org.example.projectbifrost.dto.Personality;
 import org.example.projectbifrost.exception.RetryableHttpException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,6 +28,33 @@ class ChatServiceTest {
 
     @Autowired
     private ChatService chatService;
+
+    @Test
+    @DisplayName("Test complete successful chat flow with session management and message history")
+    void testSuccessfulChatWithLLM() {
+        String sessionId = "test-sessionId-1";
+        String userMessage = "What is your advice?";
+        String llmResponse = "Heed my wisdom, mortal!";
+
+        stubFor(post(urlEqualTo("/chat/completions"))
+                .willReturn(aResponse().withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\"choices\": [{\"message\": {\"content\": \"" + llmResponse + "\"}}]}")));
+
+        String result = chatService.chatWithLLM(
+                new ChatRequestDTO(Personality.ODIN, userMessage, sessionId)
+        );
+
+        // Verify response and history
+        assertThat(result).isEqualTo(llmResponse);
+
+        ChatSession session = chatService.getSessionHistory(sessionId);
+        assertThat(session.getChatHistory()).hasSize(2);
+        assertThat(session.getChatHistory().get(0).getRole()).isEqualTo("user");
+        assertThat(session.getChatHistory().get(0).getContent()).isEqualTo(userMessage);
+        assertThat(session.getChatHistory().get(1).getRole()).isEqualTo("assistant");
+        assertThat(session.getChatHistory().get(1).getContent()).isEqualTo(llmResponse);
+    }
 
     @Test
     @DisplayName("Test retry mechanism when LLM service is temporarily unavailable")
