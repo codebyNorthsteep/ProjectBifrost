@@ -1,10 +1,11 @@
-package org.example.projectbifrost;
+package org.example.projectbifrost.controller;
 
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.example.projectbifrost.domain.ChatSession;
 import org.example.projectbifrost.dto.ChatRequestDTO;
 import org.example.projectbifrost.service.ChatService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -21,14 +22,23 @@ public class BifrostController {
 
 
     @PostMapping("/v1/chat")
-    public String sendChatRequest(@Valid @RequestBody ChatRequestDTO dto) {
+    public ResponseEntity<String> sendChatRequest(@Valid @RequestBody ChatRequestDTO dto) {
         log.info("Received chat request: Personality={}, SessionId={}", dto.personality(), maskSessionId(dto.sessionId()));
-        return chatService.chatWithLLM(dto);
+        String response = chatService.chatWithLLM(dto);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/v1/chat/{sessionId}")
-    public ChatSession getChatHistory(@PathVariable String sessionId) {
-        return chatService.getSessionHistory(sessionId);
+    public ResponseEntity<ChatSession> getChatHistory(@PathVariable String sessionId) {
+        ChatSession session = chatService.getSessionHistory(sessionId);
+        return ResponseEntity.ok(session);
+    }
+
+    @DeleteMapping("/v1/chat/{sessionId}")
+    public ResponseEntity<Void> clearChatHistory(@PathVariable String sessionId) {
+        log.info("Clearing chat history for session: {}", maskSessionId(sessionId));
+        chatService.clearChatHistory(sessionId);
+        return ResponseEntity.noContent().build();
     }
 
     //Mask when logging seesionId

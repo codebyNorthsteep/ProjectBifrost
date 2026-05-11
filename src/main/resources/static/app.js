@@ -17,6 +17,7 @@ const dom = {
     personality: document.getElementById('personality-select'),
     input: document.getElementById('user-input'),
     button: document.getElementById('send-button'),
+    clearBtn: document.getElementById('clear-button'),
     window: document.getElementById('chat-window'),
     typing: document.getElementById('typing-indicator'),
     chips: document.querySelectorAll('.god-chip')
@@ -97,6 +98,33 @@ async function sendMessage() {
     }
 }
 
+async function clearChat() {
+    if (chatState.isWaiting) return; //Block clearing if waiting for response, race conditions could occur
+    if (!confirm("Are you sure you want to clear your chat history?")) return;
+
+    try {
+        const response = await fetch(`/api/v1/chat/${chatState.sessionId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            dom.window.innerHTML = '';
+
+            //Reset to default chip selection
+            dom.chips.forEach(c => c.classList.remove('active'));
+            const defaultChip = document.querySelector('.god-chip[data-god="HEIMDALL"]');
+            if (defaultChip) defaultChip.classList.add('active');
+            dom.personality.value = 'HEIMDALL';
+            appendMessage('assistant', 'Heimdall', 'The runes are cast anew. The gods have forgotten your past whispers. A clean slate at the foot of Yggdrasil. Pick which god shall lead your path this time?');
+        }
+    } catch (err) {
+        console.error("Could not clear chat history:", err);
+    }
+}
+
+// Koppla knappen till funktionen
+dom.clearBtn.addEventListener('click', clearChat);
+
 // ── UI helpers ────────────────────────────────────────────────────────
 
 //Display and format messages in chat window, with different styling for user and assistant. Also scrolls to bottom when new message is added
@@ -109,7 +137,13 @@ function appendMessage(role, name, text) {
         label.className = 'god-label';
         label.textContent = name;
         msgDiv.appendChild(label);
-        msgDiv.appendChild(document.createTextNode(text));
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'markdown-body';
+        //Render markdown to HTML
+        const rawHtml = window.marked.parse(text);
+        //Sanitize the HTML to prevent XSS attacks, then set it as content of the message
+        contentDiv.innerHTML = DOMPurify.sanitize(rawHtml);
+        msgDiv.appendChild(contentDiv);
     } else {
         msgDiv.textContent = text;
     }
@@ -122,6 +156,13 @@ function setLoading(active) {
     chatState.isWaiting = active;
     dom.typing.classList.toggle('hidden', !active);
     dom.button.disabled = active;
+
+    //Deactivate clear button while waiting for response, to prevent race conditions
+    if (dom.clearBtn) {
+        dom.clearBtn.disabled = active;
+        dom.clearBtn.style.opacity = active ? "0.5" : "1"; // Valfritt: gör den lite genomskinlig
+        dom.clearBtn.style.cursor = active ? "not-allowed" : "pointer";
+    }
 }
 
 function getGodName(value) {

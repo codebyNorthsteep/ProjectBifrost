@@ -138,4 +138,8 @@ public class ChatService {
         return chatSessionStorage.getOrCreateChatSession(sessionId);
     }
 
+    public void clearChatHistory(String sessionId) {
+        chatSessionStorage.clearSessionHistory(sessionId);
+    }
+
 }

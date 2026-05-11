@@ -1,10 +1,12 @@
 # 🌉 Asgard AI - Speak to the Gods
 Välkommen du modige äventyrare! 
 ProjectBifrost(Asgard AI) är en modern chatt-applikation där du kan kommunicera med fem olika nordiska gudar, var och en med sin egen unika personlighet. Systemet använder avancerad prompt-engineering och AI via OpenRouter för att ge autentiska svar.
-## 🎯 Features
+## 🎯 The Powers of Asgard
 
-- 🗣️ **Fem gudomliga personligheter**: Odin, Loki, Thor, Freyja, och Heimdall - var och en med unika svarsstilar och personlighetsdrag (Prompt Engineering)
+- 🗣️ **Fem gudomliga personligheter**: Odin, Loki, Thor, Freyja, och Heimdall, var och en med unika svarsstilar och personlighetsdrag (Prompt Engineering)
+- ✉️ **Skicka meddelande**: Skriv ett meddelande och klicka "Send" eller tryck Enter. Systemet skickar en unik session ID, ditt meddelande, och den valda gudens personlighet till backend.
 - 💬 **Chatthistorik**: Dina samtal sparas server-side och hämtas automatiskt vid sidomladdning via ditt sessions ID. Persistent chat-historik per session.
+- 🗑️ **Clear Chat**: Rensa all chatthistorik med en knapp, återställer personlighetsval och visar bekräftelseruta
 - 🛡️ **Resilience**: Circuit Breaker + Retry-logik för robust API-hantering
 - ♿ **Accessible**: Nordisk-inspirerad design med responsiv layout och gud-chips för snabba val.
 - ⚡ **Real-time Feedback**: Visar när gudarna "tänker" (typing indicator) och hanterar timeouts snyggt.
@@ -62,7 +64,7 @@ OPENROUTER_API_KEY=sk-ditt-hemliga-nyckel-här
 
 ### 3.5️⃣ (Valfritt) Välj en annan LLM-modell
 
-Standard-modellen är `poolside/laguna-xs.2:free` (gratis). Du kan byta till en annan modell genom att redigera `src/main/resources/application.properties`:
+Standard-modellen är `poolside/laguna-xs.2:free` (gratis). Du kan byta till en annan modell genom att redigera `src/main/resources/application.properties` till exempelvis:
 
 ```properties
 openrouter.model=gpt-4o-mini
@@ -101,6 +103,7 @@ Där kan du se:
 |-------|----------|-------------|
 | POST | `/api/v1/chat` | Skicka meddelande till gud |
 | GET | `/api/v1/chat/{sessionId}` | Hämta chat-historik |
+| DELETE | `/api/v1/chat/{sessionId}` | Rensa chat-historik |
 
 ---
 
@@ -115,29 +118,36 @@ RestClient (OpenRouter API)
     ↓
 ChatSessionStorage (In-memory cache)
 ```
+## 🗂️ Backend
+
+- **Personality Enum**: Varje gud har en unik system prompt som injiceras tillsammans med meddelandena för att ge rätt personlighet
+- **ChatSessionStorage**: In-memory cache med ConcurrentHashMap som sparar alla sessioner och deras meddelandehistorik
+- **GlobalExceptionHandler**: Centraliserad felhantering med `@ControllerAdvice` som översätter exceptions till tematiska felmeddelanden (t.ex. "The Gods are silent" för service unavailable). Hanterar validering, timeouts, LLM-fel och malformad JSON
+- **Message Flow**: POST `/api/v1/chat` validera → hämta/skapa session → bygg prompt-lista [system prompt + historik + nytt meddelande] → kalla LLM via OpenRouter → spara svar i session → returnera till frontend
 
 **Resilience:**
 - 🔄 **Retry**: Max 3 försök med exponential backoff
 - 🚫 **Circuit Breaker**: Öppnas efter 50% fel-rate på 10 samtal
 
----
-
 ## 🧠 Frontend (JavaScript)
 
 - 🪟 **Din väg över Bifrost**: Session ID genereras automatiskt via `crypto.randomUUID()` och sparas i `localStorage.bifrost_session_id`, så länge du inte tömmer webbläsarens cache
 - ⚓ **Heimdall Vaktar**: Default personlighet sätts i HTML och JS (`dom.personality.value = 'HEIMDALL'`)
+- ✉️ **Skicka meddelande**: JavaScript använder `fetch()` POST till `/api/v1/chat` med AbortController för 15-sekunders timeout. Vid error visas tematiskt meddelande från systemet (t.ex. "The Gods took too long to respond...")
 - 📜 **Runor från Mnemosyne - Minnets gudinna**:
   - Alla sessioner med meddelanden sparas **lokalt** i `ChatSessionStorage` (in-memory)
   - Vid sidladdning hämtar JavaScript automatiskt samtida historik via `GET /api/v1/chat/{sessionId}`
   - Om du laddar om sidan → samma session ID → all historik visas igen
   - Sessions försvinner endast när Java-servern omstartas (in-memory)
+- 🗑️ **Clear-knappen**: Rensar chatthistorik för sessionen via `DELETE /api/v1/chat/{sessionId}`, återställer personlighetsvalet till Heimdall, och visar bekräftelseruta före borttagning
+- 🛡️ **XSS Protection**: All AI-genererad Markdown tvättas via DOMPurify innan rendering för att förhindra skadlig kodinjektion.
 
 ---
 
 ## 🛠️ Techstack
 
 - **Backend**: Spring Boot 4.0.6, Java 25
-- **Frontend**: Vanilla JavaScript, HTML, CSS
+- **Frontend**: Vanilla JavaScript, Marked.js (Markdown parsing för snabb & snygg formatering av meddelanden), HTML, CSS
 - **API**: OpenRouter (LLM)
 - **Resilience**: Resilience4j
 - **Testning**: JUnit 5, AssertJ, Mockito, WireMock
@@ -150,6 +160,8 @@ ChatSessionStorage (In-memory cache)
 ```bash
 ./mvnw test
 ```
+
+Testsvit inkluderar enhetstester för storage, service, och controllerns endpoints
 
 ---
 
