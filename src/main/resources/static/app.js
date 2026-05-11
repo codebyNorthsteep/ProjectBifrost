@@ -99,6 +99,7 @@ async function sendMessage() {
 }
 
 async function clearChat() {
+    if (chatState.isWaiting) return; //Block clearing if waiting for response, race conditions could occur
     if (!confirm("Are you sure you want to clear your chat history?")) return;
 
     try {
@@ -138,8 +139,10 @@ function appendMessage(role, name, text) {
         msgDiv.appendChild(label);
         const contentDiv = document.createElement('div');
         contentDiv.className = 'markdown-body';
-        // Tolka markdown till HTML
-        contentDiv.innerHTML = window.marked.parse(text);
+        //Render markdown to HTML
+        const rawHtml = window.marked.parse(text);
+        //Sanitize the HTML to prevent XSS attacks, then set it as content of the message
+        contentDiv.innerHTML = DOMPurify.sanitize(rawHtml);
         msgDiv.appendChild(contentDiv);
     } else {
         msgDiv.textContent = text;
@@ -153,6 +156,13 @@ function setLoading(active) {
     chatState.isWaiting = active;
     dom.typing.classList.toggle('hidden', !active);
     dom.button.disabled = active;
+
+    //Deactivate clear button while waiting for response, to prevent race conditions
+    if (dom.clearBtn) {
+        dom.clearBtn.disabled = active;
+        dom.clearBtn.style.opacity = active ? "0.5" : "1"; // Valfritt: gör den lite genomskinlig
+        dom.clearBtn.style.cursor = active ? "not-allowed" : "pointer";
+    }
 }
 
 function getGodName(value) {

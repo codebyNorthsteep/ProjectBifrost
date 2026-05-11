@@ -140,13 +140,14 @@ ChatSessionStorage (In-memory cache)
   - Om du laddar om sidan → samma session ID → all historik visas igen
   - Sessions försvinner endast när Java-servern omstartas (in-memory)
 - 🗑️ **Clear-knappen**: Rensar chatthistorik för sessionen via `DELETE /api/v1/chat/{sessionId}`, återställer personlighetsvalet till Heimdall, och visar bekräftelseruta före borttagning
+- 🛡️ **XSS Protection**: All AI-genererad Markdown tvättas via DOMPurify innan rendering för att förhindra skadlig kodinjektion.
 
 ---
 
 ## 🛠️ Techstack
 
 - **Backend**: Spring Boot 4.0.6, Java 25
-- **Frontend**: Vanilla JavaScript, Marked.js (Markdown parsing för snygg formatering av meddelanden), HTML, CSS
+- **Frontend**: Vanilla JavaScript, Marked.js (Markdown parsing för snabb & snygg formatering av meddelanden), HTML, CSS
 - **API**: OpenRouter (LLM)
 - **Resilience**: Resilience4j
 - **Testning**: JUnit 5, AssertJ, Mockito, WireMock
