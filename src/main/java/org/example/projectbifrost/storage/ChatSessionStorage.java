@@ -28,6 +28,13 @@ public class ChatSessionStorage {
         );
     }
 
+    public void clearSessionHistory(String sessionId) {
+        ChatSession session = sessionStorage.get(sessionId);
+        if (session != null) {
+            session.clearChatHistory();
+        }
+    }
+
     /**
      * Deletes a session by its ID.
      * * Note: For production, an automatic cleanup (like a Cache with

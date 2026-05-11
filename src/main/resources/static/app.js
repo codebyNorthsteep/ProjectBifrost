@@ -17,6 +17,7 @@ const dom = {
     personality: document.getElementById('personality-select'),
     input: document.getElementById('user-input'),
     button: document.getElementById('send-button'),
+    clearBtn: document.getElementById('clear-button'),
     window: document.getElementById('chat-window'),
     typing: document.getElementById('typing-indicator'),
     chips: document.querySelectorAll('.god-chip')
@@ -97,6 +98,32 @@ async function sendMessage() {
     }
 }
 
+async function clearChat() {
+    if (!confirm("Are you sure you want to clear your chat history?")) return;
+
+    try {
+        const response = await fetch(`/api/v1/chat/${chatState.sessionId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            dom.window.innerHTML = '';
+
+            //Reset to default chip selection
+            dom.chips.forEach(c => c.classList.remove('active'));
+            const defaultChip = document.querySelector('.god-chip[data-god="HEIMDALL"]');
+            if (defaultChip) defaultChip.classList.add('active');
+            dom.personality.value = 'HEIMDALL';
+            appendMessage('assistant', 'Heimdall', 'The runes are cast anew. The gods have forgotten your past whispers. A clean slate at the foot of Yggdrasil. Pick which god shall lead your path this time?');
+        }
+    } catch (err) {
+        console.error("Could not clear chat history:", err);
+    }
+}
+
+// Koppla knappen till funktionen
+dom.clearBtn.addEventListener('click', clearChat);
+
 // ── UI helpers ────────────────────────────────────────────────────────
 
 //Display and format messages in chat window, with different styling for user and assistant. Also scrolls to bottom when new message is added
@@ -109,7 +136,11 @@ function appendMessage(role, name, text) {
         label.className = 'god-label';
         label.textContent = name;
         msgDiv.appendChild(label);
-        msgDiv.appendChild(document.createTextNode(text));
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'markdown-body';
+        // Tolka markdown till HTML
+        contentDiv.innerHTML = window.marked.parse(text);
+        msgDiv.appendChild(contentDiv);
     } else {
         msgDiv.textContent = text;
     }

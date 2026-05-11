@@ -1,5 +1,6 @@
 package org.example.projectbifrost.storage;
 
+import org.example.projectbifrost.domain.ChatMessage;
 import org.example.projectbifrost.domain.ChatSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -55,5 +56,25 @@ class ChatSessionStorageTest {
         ChatSession newSession = storage.getOrCreateChatSession(sessionId);
 
         assertThat(newSession).isNotSameAs(oldSession);
+    }
+
+    @Test
+    @DisplayName("Should clear chat history while keeping the session")
+    void shouldClearSessionHistory() {
+        String sessionId = "history-session";
+        ChatSession session = storage.getOrCreateChatSession(sessionId);
+
+        // Add some messages to the history
+        session.addMessage(new ChatMessage("user", "Hello", "you"));
+        session.addMessage(new ChatMessage("assistant", "Hi there!", "LOKI"));
+
+        assertThat(session.getChatHistory()).hasSize(2);
+
+        // Clear the history
+        storage.clearSessionHistory(sessionId);
+
+        // History should be empty but session should still exist
+        assertThat(session.getChatHistory()).isEmpty();
+        assertThat(session.getSessionId()).isEqualTo(sessionId);
     }
 }

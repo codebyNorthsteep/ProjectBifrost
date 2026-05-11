@@ -25,4 +25,8 @@ public class ChatSession {
     public void addMessage(ChatMessage message) {
         chatHistory.add(message);
     }
+
+    public void clearChatHistory() {
+        chatHistory.clear();  // keeps sessionId
+    }
 }

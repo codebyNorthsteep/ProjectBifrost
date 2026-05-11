@@ -1,6 +1,5 @@
 package org.example.projectbifrost.controller;
 
-import org.example.projectbifrost.BifrostController;
 import org.example.projectbifrost.dto.ChatRequestDTO;
 import org.example.projectbifrost.service.ChatService;
 import org.junit.jupiter.api.DisplayName;
@@ -12,7 +11,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -62,5 +63,16 @@ class BifrostControllerTest {
     void shouldReturn200ForGetHistory() throws Exception {
         mockMvc.perform(get("/api/v1/chat/session123"))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("Should return 204 No Content when clearing chat history")
+    void shouldReturn204ForClearHistory() throws Exception {
+        String sessionId = "session123";
+
+        mockMvc.perform(delete("/api/v1/chat/" + sessionId))
+                .andExpect(status().isNoContent());
+
+        verify(chatService).clearChatHistory(sessionId);
     }
 }

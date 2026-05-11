@@ -170,4 +170,31 @@ class ChatServiceTest {
                 .as("Circuit breaker should have recovered and call should succeed")
                 .isEqualTo("Success after recovery!");
     }
+
+    @Test
+    @DisplayName("Should clear chat history for a session")
+    void testClearChatHistory() {
+        String sessionId = "history-clear-session";
+        String llmResponse = "Clear me!";
+
+        stubFor(post(urlEqualTo("/chat/completions"))
+                .willReturn(aResponse().withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\"choices\": [{\"message\": {\"content\": \"" + llmResponse + "\"}}]}")));
+
+        // Add messages to session
+        chatService.chatWithLLM(
+                new ChatRequestDTO(Personality.ODIN, "First message", sessionId)
+        );
+
+        ChatSession session = chatService.getSessionHistory(sessionId);
+        assertThat(session.getChatHistory()).hasSize(2);
+
+        // Clear the history
+        chatService.clearChatHistory(sessionId);
+
+        // Verify history is empty but session still exists
+        assertThat(session.getChatHistory()).isEmpty();
+        assertThat(session.getSessionId()).isEqualTo(sessionId);
+    }
 }
