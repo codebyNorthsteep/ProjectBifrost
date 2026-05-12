@@ -131,7 +131,7 @@ ChatSessionStorage (In-memory cache)
 
 ## 🧠 Frontend (JavaScript)
 
-- 🪟 **Din väg över Bifrost**: Session ID genereras automatiskt via `crypto.randomUUID()` och sparas i `localStorage.bifrost_session_id`, så länge du inte tömmer webbläsarens cache
+- 🪟 **Din väg över Bifrost**: Session ID genereras automatiskt via `crypto.randomUUID()` och sparas i `sessionStorage.bifrost_session_id`, detta tillåter sidomladdning (refresh) utan att förlora chatten, men rensar sessionen när fliken stängs för bättre säkerhet.
 - ⚓ **Heimdall Vaktar**: Default personlighet sätts i HTML och JS (`dom.personality.value = 'HEIMDALL'`)
 - ✉️ **Skicka meddelande**: JavaScript använder `fetch()` POST till `/api/v1/chat` med AbortController för 15-sekunders timeout. Vid error visas tematiskt meddelande från systemet (t.ex. "The Gods took too long to respond...")
 - 📜 **Runor från Mnemosyne - Minnets gudinna**:
@@ -142,7 +142,9 @@ ChatSessionStorage (In-memory cache)
 - 🗑️ **Clear-knappen**: Rensar chatthistorik för sessionen via `DELETE /api/v1/chat/{sessionId}`, återställer personlighetsvalet till Heimdall, och visar bekräftelseruta före borttagning
   <img width="262" height="306" alt="Skärmbild 2026-05-12 015123" src="https://github.com/user-attachments/assets/9f23b8d9-85bf-49c8-bdb4-9fe39e04a497" />
 
-- 🛡️ **XSS Protection**: All AI-genererad Markdown tvättas via DOMPurify innan rendering för att förhindra skadlig kodinjektion.
+- 🛡️ **Säkerhet & XSS Protection**: 
+  - All AI-genererad Markdown tvättas via DOMPurify innan rendering för att förhindra skadlig kodinjektion.
+  - Subresource Integrity (SRI) används för att verifiera att externa bibliotek från CDN inte har manipulerats.
 
 ---
 
