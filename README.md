@@ -140,6 +140,7 @@ ChatSessionStorage (In-memory cache)
   - Om du laddar om sidan → samma session ID → all historik visas igen
   - Sessions försvinner endast när Java-servern omstartas (in-memory)
 - 🗑️ **Clear-knappen**: Rensar chatthistorik för sessionen via `DELETE /api/v1/chat/{sessionId}`, återställer personlighetsvalet till Heimdall, och visar bekräftelseruta före borttagning
+  
   <img width="262" height="306" alt="Skärmbild 2026-05-12 015123" src="https://github.com/user-attachments/assets/9f23b8d9-85bf-49c8-bdb4-9fe39e04a497" />
 
 - 🛡️ **Säkerhet & XSS Protection**: 
