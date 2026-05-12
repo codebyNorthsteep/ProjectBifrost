@@ -1,8 +1,8 @@
 const getSessionId = () => {
-    let id = localStorage.getItem('bifrost_session_id'); //Try to find the old sessionID or create a new one
+    let id = sessionStorage.getItem('bifrost_session_id'); //Try to find the old sessionID or create a new one
     if (!id) {
         id = crypto.randomUUID();
-        localStorage.setItem('bifrost_session_id', id);
+        sessionStorage.setItem('bifrost_session_id', id);
     }
     return id;
 };
